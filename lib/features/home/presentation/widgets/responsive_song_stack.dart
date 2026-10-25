@@ -115,6 +115,10 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     if (widget.onTrackTap != null) {
       widget.onTrackTap!(track);
     } else {
+      ref.read(playbackNotifierProvider.notifier).playTrack(
+        track,
+        queue: tracks,
+      );
       final song = Song.fromAudioTrack(track, index);
       Navigator.of(context).push(PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 450),

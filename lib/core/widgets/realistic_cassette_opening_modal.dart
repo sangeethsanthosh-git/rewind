@@ -3,8 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/audio_player/domain/audio_track.dart';
+import '../../features/audio_player/domain/playback_state.dart';
 import '../../features/audio_player/presentation/providers/audio_player_provider.dart';
 import '../../features/audio_player/presentation/screens/now_playing_screen.dart';
+import 'artwork_widget.dart';
 
 class Song {
   final String title, artist, album;
@@ -144,7 +146,16 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
       if (currentPlayback.currentTrack?.id == widget.song.audioTrack!.id && currentPlayback.isPlaying) {
         playing = true;
         _spin.repeat();
-        _prog.forward();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ref.read(playbackNotifierProvider.notifier).playTrack(
+                widget.song.audioTrack!,
+                queue: widget.allTracks ?? [widget.song.audioTrack!],
+              );
+          setState(() => playing = true);
+          _spin.repeat();
+        });
       }
     }
   }
@@ -193,6 +204,24 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
   @override
   Widget build(BuildContext context) {
     final song = widget.song;
+    final playbackState = ref.watch(playbackNotifierProvider);
+    final isTrackActive = widget.song.audioTrack != null &&
+        playbackState.currentTrack?.id == widget.song.audioTrack!.id;
+    final isAudioPlaying = isTrackActive ? playbackState.isPlaying : playing;
+
+    if (isAudioPlaying && !_spin.isAnimating) {
+      _spin.repeat();
+    } else if (!isAudioPlaying && _spin.isAnimating) {
+      _spin.stop();
+    }
+
+    final double progressVal = (isTrackActive && playbackState.duration.inMilliseconds > 0)
+        ? (playbackState.position.inMilliseconds / playbackState.duration.inMilliseconds).clamp(0.0, 1.0)
+        : _prog.value;
+    final Animation<double> cassetteProgress = isTrackActive
+        ? AlwaysStoppedAnimation(progressVal)
+        : _prog;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0B),
       body: LayoutBuilder(builder: (context, box) {
@@ -217,11 +246,15 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
                     width: cw * s,
                     height: ch * s,
                     child: FittedBox(
-                      child: SizedBox(width: cw, height: ch, child: _buildCase(song)),
+                      child: SizedBox(
+                        width: cw,
+                        height: ch,
+                        child: _buildCase(song, cassetteProgress),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 28),
-                  _controls(),
+                  _controls(playbackState, isTrackActive, isAudioPlaying, progressVal),
                 ],
               ),
             ),
@@ -241,7 +274,7 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
     );
   }
 
-  Widget _buildCase(Song song) {
+  Widget _buildCase(Song song, Animation<double> cassetteProgress) {
     return AnimatedBuilder(
       animation: _intro,
       builder: (context, _) {
@@ -291,7 +324,7 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
               ),
               child: CustomPaint(
                 size: const Size(196, 326),
-                painter: CassettePainter(song, _spin, _prog),
+                painter: CassettePainter(song, _spin, cassetteProgress),
               ),
             ),
           ),
@@ -316,8 +349,20 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
     );
   }
 
-  Widget _controls() {
+  Widget _controls(
+    SpoolPlaybackState playbackState,
+    bool isTrackActive,
+    bool isAudioPlaying,
+    double progressVal,
+  ) {
     const muted = Color(0xFF8A8A90);
+    final String currentPosStr = (isTrackActive && playbackState.duration.inMilliseconds > 0)
+        ? _fmt(playbackState.position.inSeconds.toDouble())
+        : _fmt(_prog.value * 60);
+    final String totalDurStr = (isTrackActive && playbackState.duration.inMilliseconds > 0)
+        ? _fmt(playbackState.duration.inSeconds.toDouble())
+        : '1:00';
+
     return AnimatedBuilder(
       animation: _intro,
       builder: (context, _) {
@@ -329,48 +374,66 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
             child: SizedBox(
               width: math.min(MediaQuery.of(context).size.width * 0.88, 420),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(playing ? 'Playing' : 'Tap to play',
+                Text(isAudioPlaying ? 'Playing' : 'Tap to play',
                     style: const TextStyle(color: muted, fontSize: 12, letterSpacing: 0.4)),
                 const SizedBox(height: 10),
                 GestureDetector(
-                  onTap: () => _setPlay(!playing),
+                  onTap: () {
+                    if (widget.song.audioTrack != null) {
+                      if (isTrackActive) {
+                        ref.read(playbackNotifierProvider.notifier).togglePlayPause();
+                      } else {
+                        ref.read(playbackNotifierProvider.notifier).playTrack(
+                              widget.song.audioTrack!,
+                              queue: widget.allTracks ?? [widget.song.audioTrack!],
+                            );
+                      }
+                    } else {
+                      _setPlay(!playing);
+                    }
+                  },
                   child: Container(
                     width: 58,
                     height: 58,
                     decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                    child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    child: Icon(isAudioPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                         color: Colors.black, size: 32),
                   ),
                 ),
                 const SizedBox(height: 12),
-                AnimatedBuilder(
-                  animation: _prog,
-                  builder: (context, _) => Row(children: [
-                    Text(_fmt(_prog.value * 60), style: const TextStyle(color: muted, fontSize: 12)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, c) => GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTapDown: (d) => _prog.value = (d.localPosition.dx / c.maxWidth).clamp(0.0, 1.0),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(2),
-                              child: LinearProgressIndicator(
-                                  value: _prog.value,
-                                  minHeight: 4,
-                                  backgroundColor: const Color(0xFF2A2A2E),
-                                  color: Colors.white),
-                            ),
+                Row(children: [
+                  Text(currentPosStr, style: const TextStyle(color: muted, fontSize: 12)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, c) => GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: (d) {
+                          final fraction = (d.localPosition.dx / c.maxWidth).clamp(0.0, 1.0);
+                          if (isTrackActive && playbackState.duration.inMilliseconds > 0) {
+                            final seekMs = (fraction * playbackState.duration.inMilliseconds).round();
+                            ref.read(playbackNotifierProvider.notifier).seek(Duration(milliseconds: seekMs));
+                          } else {
+                            _prog.value = fraction;
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: LinearProgressIndicator(
+                                value: progressVal,
+                                minHeight: 4,
+                                backgroundColor: const Color(0xFF2A2A2E),
+                                color: Colors.white),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Text('1:00', style: TextStyle(color: muted, fontSize: 12)),
-                  ]),
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(totalDurStr, style: const TextStyle(color: muted, fontSize: 12)),
+                ]),
                 const SizedBox(height: 6),
                 OutlinedButton(
                   onPressed: () {
@@ -382,7 +445,7 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
                       foregroundColor: const Color(0xFFCFCFD4),
                       side: const BorderSide(color: Color(0xFF333333)),
                       shape: const StadiumBorder()),
-                  child: const Text('Use your own audio', style: TextStyle(fontSize: 12)),
+                  child: const Text('Full Player Deck', style: TextStyle(fontSize: 12)),
                 ),
               ]),
             ),
@@ -401,7 +464,7 @@ class _CoverFront extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(6),
       child: Stack(fit: StackFit.expand, children: [
-        _Art(song.art, artworkPath: song.artworkPath),
+        _Art(song.art, artworkPath: song.artworkPath, audioTrack: song.audioTrack),
         Positioned(
           left: 0,
           right: 0,
@@ -480,7 +543,14 @@ class _CoverBack extends StatelessWidget {
         child: SizedBox(
           width: 210,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            SizedBox(height: 56, width: double.infinity, child: ClipRRect(borderRadius: BorderRadius.circular(3), child: _Art(song.art, artworkPath: song.artworkPath))),
+            SizedBox(
+              height: 56,
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: _Art(song.art, artworkPath: song.artworkPath, audioTrack: song.audioTrack),
+              ),
+            ),
             const SizedBox(height: 10),
             Text(song.album,
                 maxLines: 1,
@@ -682,7 +752,9 @@ class CassettePainter extends CustomPainter {
 class _Art extends StatelessWidget {
   final int kind;
   final String? artworkPath;
-  const _Art(this.kind, {this.artworkPath});
+  final AudioTrack? audioTrack;
+
+  const _Art(this.kind, {this.artworkPath, this.audioTrack});
 
   Widget _blob(Alignment c, double r, Color col) => Positioned.fill(
         child: DecoratedBox(
@@ -703,11 +775,22 @@ class _Art extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (artworkPath != null && File(artworkPath!).existsSync()) {
+    if (artworkPath != null && artworkPath!.isNotEmpty && File(artworkPath!).existsSync()) {
       return Image.file(
         File(artworkPath!),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => _buildFallbackArt(),
+      );
+    }
+    if (audioTrack != null) {
+      return ArtworkWidget(
+        id: audioTrack!.albumId ?? int.tryParse(audioTrack!.id),
+        albumId: audioTrack!.albumId,
+        customArtPath: audioTrack!.customArtPath,
+        title: audioTrack!.title,
+        artist: audioTrack!.artist,
+        size: double.infinity,
+        borderRadius: 0,
       );
     }
     return _buildFallbackArt();

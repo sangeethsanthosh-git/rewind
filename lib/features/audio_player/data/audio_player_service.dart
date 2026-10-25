@@ -98,6 +98,9 @@ class AudioPlayerService {
   }
 
   Uri? _getArtworkUri(AudioTrack track) {
+    if (track.customArtPath != null && track.customArtPath!.isNotEmpty) {
+      return Uri.file(track.customArtPath!);
+    }
     if (track.albumId != null) {
       return Uri.parse('content://media/external/audio/albumart/${track.albumId}');
     }

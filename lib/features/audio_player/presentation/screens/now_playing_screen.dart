@@ -14,6 +14,7 @@ import 'package:spool/core/widgets/analog_vu_meter.dart';
 import 'package:spool/core/widgets/artwork_widget.dart';
 import 'package:spool/core/widgets/cassette_tape_widget.dart';
 import 'package:spool/core/widgets/crt_waveform_visualizer.dart';
+import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
 import 'package:spool/features/audio_player/domain/playback_state.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
@@ -601,6 +602,26 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
           MechanicalSoundType.skipClick,
           settings: settings,
         );
+        if (mode == NowPlayingVisualMode.cassette) {
+          final playbackState = ref.read(playbackNotifierProvider);
+          final currentTrack = playbackState.currentTrack;
+          if (currentTrack != null) {
+            final queue = playbackState.queue;
+            final index = queue.indexWhere((t) => t.id == currentTrack.id);
+            final song = Song.fromAudioTrack(currentTrack, index >= 0 ? index : 0);
+            Navigator.of(context).push(PageRouteBuilder(
+              transitionDuration: const Duration(milliseconds: 450),
+              reverseTransitionDuration: const Duration(milliseconds: 350),
+              pageBuilder: (context, anim, secAnim) => CassettePage(
+                song: song,
+                allTracks: queue.isNotEmpty ? queue : [currentTrack],
+              ),
+              transitionsBuilder: (context, a, secAnim, child) =>
+                  FadeTransition(opacity: a, child: child),
+            ));
+            return;
+          }
+        }
         setState(() => _visualMode = mode);
       },
       child: Container(
@@ -743,18 +764,35 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
               ),
             ),
           ),
-          // Banner Artwork
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: ArtworkWidget(
-              id: track.albumId,
-              customArtPath: track.customArtPath,
-              size: size,
-              title: track.title,
-              artist: track.artist,
-              onAddBanner: () {
-                BannerPickerHelper.pickAndSetBanner(context: context, ref: ref, track: track);
-              },
+          // Banner Artwork - tapping banner opens realistic cassette opening animation
+          GestureDetector(
+            onTap: () {
+              final queue = ref.read(playbackNotifierProvider).queue;
+              final index = queue.indexWhere((t) => t.id == track.id);
+              final song = Song.fromAudioTrack(track, index >= 0 ? index : 0);
+              Navigator.of(context).push(PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 450),
+                reverseTransitionDuration: const Duration(milliseconds: 350),
+                pageBuilder: (context, anim, secAnim) => CassettePage(
+                  song: song,
+                  allTracks: queue.isNotEmpty ? queue : [track],
+                ),
+                transitionsBuilder: (context, a, secAnim, child) =>
+                    FadeTransition(opacity: a, child: child),
+              ));
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: ArtworkWidget(
+                id: track.albumId,
+                customArtPath: track.customArtPath,
+                size: size,
+                title: track.title,
+                artist: track.artist,
+                onAddBanner: () {
+                  BannerPickerHelper.pickAndSetBanner(context: context, ref: ref, track: track);
+                },
+              ),
             ),
           ),
           // Edit Banner Image Pill Button

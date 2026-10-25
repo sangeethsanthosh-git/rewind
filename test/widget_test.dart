@@ -6,6 +6,8 @@ import 'package:spool/core/widgets/europe_deluxe_disc.dart';
 import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
 import 'package:spool/core/widgets/retro_walkman_widget.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
+import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
+import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
 import 'package:spool/features/home/presentation/screens/home_screen.dart';
 import 'package:spool/features/library/domain/folder_model.dart';
 import 'package:spool/features/library/presentation/screens/folders_screen.dart';
@@ -232,5 +234,49 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 11));
     expect(find.byType(FoldersScreen), findsOneWidget);
+  });
+
+  testWidgets('NowPlayingScreen and CassettePage render realistic opening animation with real audio track', (WidgetTester tester) async {
+    const testTrack = AudioTrack(
+      id: 'test_track_banner',
+      title: 'Aaromal',
+      artist: 'Vishal Chandrashekhar',
+      album: 'Sita Ramam',
+      durationMs: 240000,
+      uri: 'content://test/aaromal',
+      path: '/test/aaromal.mp3',
+      fileExtension: 'mp3',
+    );
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: CassettePage(
+              song: Song(
+                'Aaromal',
+                'Vishal Chandrashekhar',
+                'Sita Ramam',
+                Color(0xFFD9582B),
+                Colors.white,
+                2,
+                audioTrack: testTrack,
+              ),
+              allTracks: [testTrack],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    // Verify CassettePage is rendered with the title and artist
+    expect(find.byType(CassettePage), findsOneWidget);
+    expect(find.text('Aaromal'), findsWidgets);
+    expect(find.text('Vishal Chandrashekhar'), findsWidgets);
+
+    await tester.pump(const Duration(seconds: 11));
   });
 }

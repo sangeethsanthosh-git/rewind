@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
 import 'package:spool/core/services/mechanical_sound_service.dart';
+import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
 import 'package:spool/core/widgets/retro_walkman_widget.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
 import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
@@ -144,13 +145,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ResponsiveSongStack(
                     tracks: allSongs,
                     onTrackTap: (track) {
+                      final trackIndex = allSongs.indexWhere((t) => t.id == track.id);
+                      final song = Song.fromAudioTrack(track, trackIndex >= 0 ? trackIndex : 0);
                       ref.read(playbackNotifierProvider.notifier).playTrack(
                         track,
                         queue: allSongs,
                       );
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const NowPlayingScreen()),
-                      );
+                      Navigator.of(context).push(PageRouteBuilder(
+                        transitionDuration: const Duration(milliseconds: 450),
+                        reverseTransitionDuration: const Duration(milliseconds: 350),
+                        pageBuilder: (context, anim, secAnim) => CassettePage(
+                          song: song,
+                          allTracks: allSongs,
+                        ),
+                        transitionsBuilder: (context, a, secAnim, child) =>
+                            FadeTransition(opacity: a, child: child),
+                      ));
                     },
                   ),
                   if (allSongs.isEmpty && libraryState.scanProgress?.isScanning != true)
