@@ -1,4 +1,4 @@
-#<img width="2172" height="724" alt="wording" src="https://github.com/user-attachments/assets/be9325ab-ae0f-4ff6-ad5b-c4a40036f85b" />
+<img width="2172" height="724" alt="wording" src="https://github.com/user-attachments/assets/be9325ab-ae0f-4ff6-ad5b-c4a40036f85b" />
 
 
 > **Retro Portable Cassette Walkman Local Audio Player for Android**  
