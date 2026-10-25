@@ -11,10 +11,19 @@
     width="180"
   />
 </p>
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android)](https://android.com)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Offline](https://img.shields.io/badge/Privacy-100%25%20Offline-success)]()
+
+<p align="center">
+  <a href="https://flutter.dev">
+    <img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter" alt="Flutter" />
+  </a>
+  <a href="https://android.com">
+    <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android" alt="Android" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
+  </a>
+  <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-success" alt="100% Offline" />
+</p>
 
 ---
 
