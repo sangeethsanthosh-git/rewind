@@ -1,22 +1,73 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_typography.dart';
-import '../services/mechanical_sound_service.dart';
-import '../utils/banner_picker_helper.dart';
-import '../utils/formatters.dart';
-import 'add_to_tape_modal.dart';
-import 'artwork_widget.dart';
 import '../../features/audio_player/domain/audio_track.dart';
 import '../../features/audio_player/presentation/providers/audio_player_provider.dart';
 import '../../features/audio_player/presentation/screens/now_playing_screen.dart';
-import '../../features/audio_player/presentation/screens/walkman_player_screen.dart';
-import '../../features/settings/presentation/providers/settings_provider.dart';
 
-class RealisticCassetteOpeningModal extends ConsumerStatefulWidget {
+class Song {
+  final String title, artist, album;
+  final Color strip, ink;
+  final int art;
+  final AudioTrack? audioTrack;
+  final String? artworkPath;
+
+  const Song(
+    this.title,
+    this.artist,
+    this.album,
+    this.strip,
+    this.ink,
+    this.art, {
+    this.audioTrack,
+    this.artworkPath,
+  });
+
+  factory Song.fromAudioTrack(AudioTrack track, int index) {
+    const stripColors = <Color>[
+      Color(0xFF1B2433),
+      Color(0xFFF2F2F0),
+      Color(0xFFD9582B),
+      Color(0xFF2D4FB0),
+      Color(0xFF171512),
+      Color(0xFF7C97B4),
+      Color(0xFF76A92E),
+    ];
+    const inks = <Color>[
+      Colors.white,
+      Color(0xFF111111),
+      Colors.white,
+      Colors.white,
+      Colors.white,
+      Colors.white,
+      Color(0xFF0D1405),
+    ];
+    return Song(
+      track.title,
+      track.artist,
+      track.album,
+      stripColors[index % stripColors.length],
+      inks[index % inks.length],
+      index % 7,
+      audioTrack: track,
+      artworkPath: track.customArtPath,
+    );
+  }
+}
+
+const defaultSampleSongs = <Song>[
+  Song('Come Together', 'The Beatles', 'Abbey Road', Color(0xFF1B2433), Colors.white, 0),
+  Song('Pink + White', 'Frank Ocean', 'Blonde', Color(0xFFF2F2F0), Color(0xFF111111), 1),
+  Song('Tití Me Preguntó', 'Bad Bunny', 'Un Verano Sin Ti', Color(0xFFD9582B), Colors.white, 2),
+  Song('Taste', 'Sabrina Carpenter', 'Short n’ Sweet', Color(0xFF2D4FB0), Colors.white, 3),
+  Song('Cry For Me', 'The Weeknd', 'Hurry Up Tomorrow', Color(0xFF171512), Colors.white, 4),
+  Song('Wildest Dreams (Taylor’s Version)', 'Taylor Swift', '1989 (Taylor’s Version)',
+      Color(0xFF7C97B4), Colors.white, 5),
+  Song('360', 'Charli xcx', 'BRAT', Color(0xFF76A92E), Color(0xFF0D1405), 6),
+];
+
+class RealisticCassetteOpeningModal extends StatelessWidget {
   final AudioTrack track;
   final List<AudioTrack> allTracks;
   final int initialIndex;
@@ -34,1243 +85,694 @@ class RealisticCassetteOpeningModal extends ConsumerStatefulWidget {
     required List<AudioTrack> allTracks,
     int initialIndex = 0,
   }) {
-    return showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Cassette Case',
-      barrierColor: Colors.black.withAlpha(225),
-      transitionDuration: const Duration(milliseconds: 480),
-      pageBuilder: (context, anim1, anim2) {
-        return RealisticCassetteOpeningModal(
-          track: track,
-          allTracks: allTracks,
-          initialIndex: initialIndex,
-        );
-      },
-      transitionBuilder: (context, anim, secondaryAnim, child) {
-        final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
-        return FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.88, end: 1.0).animate(curved),
-            child: child,
-          ),
-        );
-      },
-    );
+    return Navigator.of(context).push(PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 450),
+      reverseTransitionDuration: const Duration(milliseconds: 350),
+      pageBuilder: (context, anim, secAnim) => CassettePage(
+        song: Song.fromAudioTrack(track, initialIndex),
+        allTracks: allTracks,
+      ),
+      transitionsBuilder: (context, a, secAnim, child) => FadeTransition(opacity: a, child: child),
+    ));
   }
 
   @override
-  ConsumerState<RealisticCassetteOpeningModal> createState() =>
-      _RealisticCassetteOpeningModalState();
+  Widget build(BuildContext context) {
+    return CassettePage(
+      song: Song.fromAudioTrack(track, initialIndex),
+      allTracks: allTracks,
+    );
+  }
 }
 
-class _RealisticCassetteOpeningModalState
-    extends ConsumerState<RealisticCassetteOpeningModal>
-    with TickerProviderStateMixin {
-  late final AnimationController _openController;
-  late final AnimationController _spoolRotationController;
-  late final Animation<double> _openAngleAnimation;
-  late final Animation<double> _tapeSlideAnimation;
+// ───────────────────────── Cassette page ─────────────────────────
 
-  late int _currentIndex;
-  bool _isDraggingSeek = false;
-  double _dragSeekMs = 0.0;
-  bool _isTransparentShell = true;
+class CassettePage extends ConsumerStatefulWidget {
+  final Song song;
+  final List<AudioTrack>? allTracks;
+
+  const CassettePage({
+    super.key,
+    required this.song,
+    this.allTracks,
+  });
+
+  @override
+  ConsumerState<CassettePage> createState() => _CassettePageState();
+}
+
+class _CassettePageState extends ConsumerState<CassettePage> with TickerProviderStateMixin {
+  static const double cw = 250, ch = 390; // case size
+  late final AnimationController _intro =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 2600));
+  late final AnimationController _spin =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1300));
+  late final AnimationController _prog =
+      AnimationController(vsync: this, duration: const Duration(seconds: 60));
+  bool playing = false;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(
-      0,
-      widget.allTracks.isNotEmpty ? widget.allTracks.length - 1 : 0,
-    );
+    _intro.forward();
+    _prog.addStatusListener((s) {
+      if (s == AnimationStatus.completed) _setPlay(false);
+    });
 
-    // Case opening hinge animation
-    _openController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-    );
-
-    _openAngleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _openController, curve: Curves.easeOutBack),
-    );
-
-    _tapeSlideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _openController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
-      ),
-    );
-
-    // Continuous spool rotation
-    _spoolRotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-
-    _openController.forward();
-    _spoolRotationController.repeat();
+    if (widget.song.audioTrack != null) {
+      final currentPlayback = ref.read(playbackNotifierProvider);
+      if (currentPlayback.currentTrack?.id == widget.song.audioTrack!.id && currentPlayback.isPlaying) {
+        playing = true;
+        _spin.repeat();
+        _prog.forward();
+      }
+    }
   }
 
   @override
   void dispose() {
-    _openController.dispose();
-    _spoolRotationController.dispose();
+    _intro.dispose();
+    _spin.dispose();
+    _prog.dispose();
     super.dispose();
   }
 
-  void _closeCase() {
-    final settings = ref.read(settingsNotifierProvider);
-    MechanicalSoundService.instance.playMechanicalSound(
-      MechanicalSoundType.doorLatch,
-      settings: settings,
-    );
-    HapticFeedback.mediumImpact();
-    _openController.reverse().then((_) {
-      if (mounted) Navigator.of(context).pop();
-    });
+  void _setPlay(bool p) {
+    if (!mounted) return;
+    setState(() => playing = p);
+    if (p) {
+      if (_prog.isCompleted) _prog.value = 0;
+      _prog.forward();
+      _spin.repeat();
+      if (widget.song.audioTrack != null) {
+        ref.read(playbackNotifierProvider.notifier).playTrack(
+              widget.song.audioTrack!,
+              queue: widget.allTracks ?? [widget.song.audioTrack!],
+            );
+      }
+    } else {
+      _prog.stop();
+      _spin.stop();
+      if (widget.song.audioTrack != null) {
+        ref.read(playbackNotifierProvider.notifier).pause();
+      }
+    }
   }
 
-  void _skipNext() {
-    if (widget.allTracks.isEmpty) return;
-    final settings = ref.read(settingsNotifierProvider);
-    MechanicalSoundService.instance.playMechanicalSound(
-      MechanicalSoundType.skipClick,
-      settings: settings,
-    );
-    setState(() {
-      _currentIndex = (_currentIndex + 1) % widget.allTracks.length;
-    });
-    final nextTrack = widget.allTracks[_currentIndex];
-    ref.read(playbackNotifierProvider.notifier).playTrack(
-          nextTrack,
-          queue: widget.allTracks,
-        );
+  Future<void> _close() async {
+    _setPlay(false);
+    await _intro.reverse();
+    if (mounted) Navigator.of(context).pop();
   }
 
-  void _skipPrev() {
-    if (widget.allTracks.isEmpty) return;
-    final settings = ref.read(settingsNotifierProvider);
-    MechanicalSoundService.instance.playMechanicalSound(
-      MechanicalSoundType.skipClick,
-      settings: settings,
-    );
-    setState(() {
-      _currentIndex = (_currentIndex - 1 + widget.allTracks.length) %
-          widget.allTracks.length;
-    });
-    final prevTrack = widget.allTracks[_currentIndex];
-    ref.read(playbackNotifierProvider.notifier).playTrack(
-          prevTrack,
-          queue: widget.allTracks,
-        );
-  }
+  String _fmt(double s) => '${s ~/ 60}:${(s % 60).floor().toString().padLeft(2, '0')}';
+
+  double _seg(double a, double b, Curve c) =>
+      c.transform(((_intro.value - a) / (b - a)).clamp(0.0, 1.0));
 
   @override
   Widget build(BuildContext context) {
-    final playbackState = ref.watch(playbackNotifierProvider);
-    final settings = ref.watch(settingsNotifierProvider);
-    final activeTrack = playbackState.currentTrack ??
-        (widget.allTracks.isNotEmpty
-            ? widget.allTracks[_currentIndex]
-            : widget.track);
-
-    // Spin or pause spools with playback state
-    if (playbackState.isPlaying && !_spoolRotationController.isAnimating) {
-      _spoolRotationController.repeat();
-    } else if (!playbackState.isPlaying &&
-        _spoolRotationController.isAnimating) {
-      _spoolRotationController.stop();
-    }
-
-    final duration = playbackState.duration;
-    final position = _isDraggingSeek
-        ? Duration(milliseconds: _dragSeekMs.toInt())
-        : playbackState.position;
-    final progress = duration.inMilliseconds > 0
-        ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
-        : 0.0;
-
+    final song = widget.song;
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 640;
-
-            return Center(
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: isWide ? 860 : 440,
-                  maxHeight: constraints.maxHeight * 0.94,
-                ),
-                margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF141419),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white24, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(250),
-                      blurRadius: 36,
-                      spreadRadius: 4,
-                      offset: const Offset(0, 18),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // Top Bar: Case Header & Actions
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 12, 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: AppColors.tapeGreen,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'SPOOL RETRO CASSETTE JEWEL CASE',
-                            style: AppTypography.monoSmall.copyWith(
-                              color: AppColors.tapeAmber,
-                              letterSpacing: 1.2,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Spacer(),
-                          // Shell Style Toggle
-                          IconButton(
-                            iconSize: 20,
-                            padding: const EdgeInsets.all(6),
-                            constraints: const BoxConstraints(),
-                            tooltip: 'Toggle Cassette Shell',
-                            icon: Icon(
-                              _isTransparentShell
-                                  ? Icons.lens_blur_rounded
-                                  : Icons.circle_rounded,
-                              color: Colors.white70,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isTransparentShell = !_isTransparentShell;
-                              });
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          // Open Walkman Screen
-                          IconButton(
-                            iconSize: 20,
-                            padding: const EdgeInsets.all(6),
-                            constraints: const BoxConstraints(),
-                            tooltip: 'Open Walkman Deck',
-                            icon: const Icon(
-                              Icons.radio_outlined,
-                              color: AppColors.neonOrange,
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const WalkmanPlayerScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          // Open Now Playing Screen
-                          IconButton(
-                            iconSize: 20,
-                            padding: const EdgeInsets.all(6),
-                            constraints: const BoxConstraints(),
-                            tooltip: 'Open Now Playing Screen',
-                            icon: const Icon(
-                              Icons.graphic_eq_rounded,
-                              color: AppColors.tapeAmber,
-                            ),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const NowPlayingScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          // Close Case Button
-                          IconButton(
-                            iconSize: 22,
-                            padding: const EdgeInsets.all(6),
-                            constraints: const BoxConstraints(),
-                            tooltip: 'Close Cassette Case',
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: Colors.white70,
-                            ),
-                            onPressed: _closeCase,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const Divider(color: AppColors.borderSubtle, height: 1),
-
-                    // Main Open Cassette Case Stage
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.all(16),
-                        child: AnimatedBuilder(
-                          animation: _openAngleAnimation,
-                          builder: (context, _) {
-                            final openVal = _openAngleAnimation.value;
-                            return isWide
-                                ? Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // J-Card Case Cover (Left)
-                                      Expanded(
-                                        flex: 5,
-                                        child: _buildJCardCover(
-                                          activeTrack,
-                                          openVal: openVal,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      // Cassette Tape in Tray (Right)
-                                      Expanded(
-                                        flex: 6,
-                                        child: _buildCassetteInTray(
-                                          track: activeTrack,
-                                          playbackState: playbackState,
-                                          position: position,
-                                          duration: duration,
-                                          progress: progress,
-                                          openVal: openVal,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // J-Card Case Cover (Top)
-                                      _buildJCardCover(
-                                        activeTrack,
-                                        openVal: openVal,
-                                        isStacked: true,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      // Cassette Tape in Tray (Bottom)
-                                      _buildCassetteInTray(
-                                        track: activeTrack,
-                                        playbackState: playbackState,
-                                        position: position,
-                                        duration: duration,
-                                        progress: progress,
-                                        openVal: openVal,
-                                      ),
-                                    ],
-                                  );
-                          },
-                        ),
-                      ),
-                    ),
-
-                    // Bottom Tape Deck Transport Controls
-                    _buildTransportBar(
-                      playbackState: playbackState,
-                      settings: settings,
-                      track: activeTrack,
-                      position: position,
-                      duration: duration,
-                    ),
-                  ],
-                ),
+      backgroundColor: const Color(0xFF0A0A0B),
+      body: LayoutBuilder(builder: (context, box) {
+        final s = math.min(box.maxWidth * 0.92 / (2 * cw), (box.maxHeight - 270) / ch).clamp(0.5, 1.4);
+        return Stack(children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                    center: const Alignment(0, -0.2),
+                    radius: 0.9,
+                    colors: [Colors.white.withAlpha(20), Colors.transparent]),
               ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  /// The J-Card jewel case front cover with banner artwork, paper texture, and retro typography
-  Widget _buildJCardCover(
-    AudioTrack track, {
-    required double openVal,
-    bool isStacked = false,
-  }) {
-    final hash = track.title.hashCode.abs();
-    final accent = AppColors.spinePalette[hash % AppColors.spinePalette.length];
-
-    // 3D perspective rotation around the left hinge
-    final hingeTransform = Matrix4.identity()
-      ..setEntry(3, 2, 0.0012)
-      ..rotateY(isStacked ? 0.0 : -(1.0 - openVal) * (math.pi / 2.2));
-
-    return Transform(
-      alignment: Alignment.centerLeft,
-      transform: hingeTransform,
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF4EDE2), // Vintage warm cream paper
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFD0C3B2), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(160),
-              blurRadius: 18,
-              offset: const Offset(4, 8),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(11),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top J-card header line (Inspired by reference Image 1 & 4)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                color: const Color(0xFFECE3D2),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'SPOOL ANALOG ARCHIVE',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.monoSmall.copyWith(
-                          color: const Color(0xFF5A4D3E),
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'STEREO C-60',
-                      style: AppTypography.monoSmall.copyWith(
-                        color: const Color(0xFF5A4D3E),
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Banner Artwork Photo (Framed film photo aesthetic)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: AspectRatio(
-                  aspectRatio: 1.25,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E22),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFF33333A),
-                        width: 1.0,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(90),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(7),
-                          child: (track.customArtPath != null &&
-                                  track.customArtPath!.isNotEmpty &&
-                                  File(track.customArtPath!).existsSync())
-                              ? Image.file(
-                                  File(track.customArtPath!),
-                                  fit: BoxFit.cover,
-                                )
-                              : (track.albumId != null
-                                  ? ArtworkWidget(
-                                      id: track.albumId,
-                                      size: double.infinity,
-                                      borderRadius: 0,
-                                      title: track.title,
-                                      artist: track.artist,
-                                    )
-                                  : _buildPlaceholderCover(accent, track)),
-                        ),
-
-                        // Edit Banner Button
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                BannerPickerHelper.pickAndSetBanner(
-                                  context: context,
-                                  ref: ref,
-                                  track: track,
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(14),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withAlpha(180),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: Colors.white30),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.edit,
-                                      size: 11,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'BANNER',
-                                      style: AppTypography.monoSmall.copyWith(
-                                        color: Colors.white,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Editorial Typography on J-Card
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      track.artist.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.monoSmall.copyWith(
-                        color: const Color(0xFF7A6A55),
-                        letterSpacing: 2.0,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      track.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'serif',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1B1813),
-                        height: 1.15,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      track.album,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'serif',
-                        fontStyle: FontStyle.italic,
-                        fontSize: 13,
-                        color: Color(0xFF5A4D3E),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Retro technical specs strip
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5DAC9),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: const Color(0xFFC7B9A3)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            track.fileExtension.toUpperCase(),
-                            style: AppTypography.monoSmall.copyWith(
-                              color: const Color(0xFF2E241A),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 8.5,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              track.isLossless
-                                  ? 'HI-RES MASTER'
-                                  : 'ANALOG HI-BIAS',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.monoSmall.copyWith(
-                                color: const Color(0xFF6B5C49),
-                                fontSize: 8.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            Formatters.formatDurationMs(track.durationMs),
-                            style: AppTypography.monoSmall.copyWith(
-                              color: const Color(0xFF2E241A),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 8.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
-        ),
-      ),
-    );
-  }
-
-  /// The clear molded jewel box tray containing the rotating cassette tape
-  Widget _buildCassetteInTray({
-    required AudioTrack track,
-    required dynamic playbackState,
-    required Duration position,
-    required Duration duration,
-    required double progress,
-    required double openVal,
-  }) {
-    final hash = track.title.hashCode.abs();
-    final accent = AppColors.spinePalette[hash % AppColors.spinePalette.length];
-
-    // Cassette emerges slightly from the tray on open
-    final slideY = (1.0 - _tapeSlideAnimation.value) * 16.0;
-
-    return Transform.translate(
-      offset: Offset(0, slideY),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1B1B22), // Molded smoked acrylic tray
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white12, width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(200),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Realistic Compact Audio Cassette
-            AspectRatio(
-              aspectRatio: 1.58,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _isTransparentShell
-                      ? const Color(0x352B3545)
-                      : const Color(0xFF1E1E24),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: _isTransparentShell
-                        ? Colors.white30
-                        : const Color(0xFF383842),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(180),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    // Corner screws
-                    const Positioned(
-                      top: 8,
-                      left: 8,
-                      child: _CassetteScrew(),
-                    ),
-                    const Positioned(
-                      top: 8,
-                      right: 8,
-                      child: _CassetteScrew(),
-                    ),
-                    const Positioned(
-                      bottom: 8,
-                      left: 8,
-                      child: _CassetteScrew(),
-                    ),
-                    const Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: _CassetteScrew(),
-                    ),
-
-                    // Paper Cassette Label Sticker
-                    Positioned(
-                      top: 20,
-                      left: 14,
-                      right: 14,
-                      bottom: 30,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: accent,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(80),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        child: Column(
-                          children: [
-                            // Top label header
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 1.5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: Colors.white70,
-                                      width: 1.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: Text(
-                                    'SIDE A',
-                                    style: AppTypography.monoSmall.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 9,
-                                    ),
-                                  ),
-                                ),
-                                Flexible(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                    ),
-                                    child: Text(
-                                      track.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 12,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  'C-60',
-                                  style: AppTypography.monoSmall.copyWith(
-                                    color: Colors.white70,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 9,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const Spacer(),
-
-                            // Center Tape Window with Live Rotating Spools
-                            Container(
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0C0C10),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.black.withAlpha(200),
-                                  width: 1.2,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  // Left Spool (Supply Reel - shrinks as track plays)
-                                  AnimatedBuilder(
-                                    animation: _spoolRotationController,
-                                    builder: (context, _) {
-                                      return Transform.rotate(
-                                        angle: _spoolRotationController.value *
-                                            2 *
-                                            math.pi,
-                                        child: _LiveCassetteSpool(
-                                          tapeRadius: 20 *
-                                              (1.0 - (progress * 0.5)),
-                                        ),
-                                      );
-                                    },
-                                  ),
-
-                                  // Center Tape Window with scale markings
-                                  Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Magnetic tape ribbon bridge
-                                      Container(
-                                        width: 58,
-                                        height: 10,
-                                        color: const Color(0xFF382317),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        '100 • 50 • 0',
-                                        style: AppTypography.monoSmall.copyWith(
-                                          fontSize: 7.5,
-                                          color: Colors.white60,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  // Right Spool (Take-up Reel - grows as track plays)
-                                  AnimatedBuilder(
-                                    animation: _spoolRotationController,
-                                    builder: (context, _) {
-                                      return Transform.rotate(
-                                        angle: _spoolRotationController.value *
-                                            2 *
-                                            math.pi,
-                                        child: _LiveCassetteSpool(
-                                          tapeRadius: 10 + (progress * 10),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const Spacer(),
-
-                            // Bottom info text
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'SPOOL LOW NOISE / HIGH OUTPUT',
-                                  style: AppTypography.monoSmall.copyWith(
-                                    color: Colors.white70,
-                                    fontSize: 8,
-                                  ),
-                                ),
-                                Text(
-                                  'DOLBY NR',
-                                  style: AppTypography.monoSmall.copyWith(
-                                    color: Colors.white70,
-                                    fontSize: 8,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Bottom Tape Head trapezoid window
-                    Positioned(
-                      bottom: 0,
-                      left: 48,
-                      right: 48,
-                      height: 14,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF121216),
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(4),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 6,
-                              color: const Color(0xFF6B4A34),
-                            ),
-                            Container(
-                              width: 14,
-                              height: 6,
-                              color: const Color(0xFF8B5A2B),
-                            ),
-                            Container(
-                              width: 8,
-                              height: 6,
-                              color: const Color(0xFF6B4A34),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Live Time Indicator
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Positioned.fill(
+            child: SafeArea(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    Formatters.formatDuration(position),
-                    style: AppTypography.monoSmall.copyWith(
-                      color: AppColors.neonOrange,
-                      fontWeight: FontWeight.bold,
+                  SizedBox(
+                    width: cw * s,
+                    height: ch * s,
+                    child: FittedBox(
+                      child: SizedBox(width: cw, height: ch, child: _buildCase(song)),
                     ),
                   ),
-                  Text(
-                    playbackState.isPlaying ? 'TAPE ROLLING' : 'PAUSED',
-                    style: AppTypography.monoSmall.copyWith(
-                      color: playbackState.isPlaying
-                          ? AppColors.tapeGreen
-                          : AppColors.textMuted,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    Formatters.formatDuration(duration),
-                    style: AppTypography.monoSmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
+                  const SizedBox(height: 28),
+                  _controls(),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+          Positioned(
+            top: 0,
+            left: 8,
+            child: SafeArea(
+              child: IconButton(
+                  onPressed: _close,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  style: IconButton.styleFrom(backgroundColor: const Color(0xAA141416))),
+            ),
+          ),
+        ]);
+      }),
     );
   }
 
-  /// Interactive mechanical transport bar at the bottom
-  Widget _buildTransportBar({
-    required dynamic playbackState,
-    required dynamic settings,
-    required AudioTrack track,
-    required Duration position,
-    required Duration duration,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F0F13),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(23)),
-        border: Border(top: BorderSide(color: AppColors.borderSubtle)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Scrub Slider
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 3.0,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              activeTrackColor: AppColors.neonOrange,
-              inactiveTrackColor: AppColors.surfaceElevated,
-              thumbColor: AppColors.parchment,
-            ),
-            child: Slider(
-              value: position.inMilliseconds.toDouble().clamp(
-                    0.0,
-                    duration.inMilliseconds.toDouble() > 0
-                        ? duration.inMilliseconds.toDouble()
-                        : 1.0,
-                  ),
-              max: duration.inMilliseconds.toDouble() > 0
-                  ? duration.inMilliseconds.toDouble()
-                  : 1.0,
-              onChangeStart: (val) {
-                setState(() {
-                  _isDraggingSeek = true;
-                  _dragSeekMs = val;
-                });
-              },
-              onChanged: (val) {
-                setState(() {
-                  _dragSeekMs = val;
-                });
-              },
-              onChangeEnd: (val) {
-                _isDraggingSeek = false;
-                ref
-                    .read(playbackNotifierProvider.notifier)
-                    .seek(Duration(milliseconds: val.toInt()));
-              },
+  Widget _buildCase(Song song) {
+    return AnimatedBuilder(
+      animation: _intro,
+      builder: (context, _) {
+        final rise = _seg(0, 0.3, Curves.easeOutCubic);
+        final open = _seg(0.3, 0.72, Curves.easeInOutCubic);
+        final lift = _seg(0.68, 1.0, Curves.easeOutCubic);
+        final ang = -2.9 * open;
+
+        final front = _CoverFront(song: song);
+        final back = _CoverBack(song: song);
+
+        final cover = Transform(
+          alignment: Alignment.centerLeft,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.0012)
+            ..rotateY(ang),
+          child: ang.abs() < math.pi / 2
+              ? front
+              : Transform(
+                  alignment: Alignment.center, transform: Matrix4.rotationY(math.pi), child: back),
+        );
+
+        final base = Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1C1C1F), Color(0xFF0B0B0C)]),
+            border: Border.all(color: Colors.white24),
+            boxShadow: const [BoxShadow(color: Colors.black87, blurRadius: 40, offset: Offset(0, 28))],
+          ),
+        );
+
+        final cassette = Center(
+          child: Transform.scale(
+            scale: 1 + 0.07 * lift,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(9),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withAlpha((150 * lift).round()),
+                      blurRadius: 24,
+                      offset: Offset(-14 * lift, 20 * lift)),
+                ],
+              ),
+              child: CustomPaint(
+                size: const Size(196, 326),
+                painter: CassettePainter(song, _spin, _prog),
+              ),
             ),
           ),
+        );
 
-          // Playback Buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              // Previous
-              IconButton(
-                iconSize: 26,
-                tooltip: 'Previous Track',
-                icon: const Icon(Icons.skip_previous, color: Colors.white70),
-                onPressed: _skipPrev,
-              ),
+        return Opacity(
+          opacity: rise,
+          child: Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.translationValues(125 * open, 180 * (1 - rise), 0)
+              ..setEntry(3, 2, 0.0006)
+              ..rotateX(0.96 * (1 - rise) + 0.1 * open)
+              ..rotateY(-0.14 * open)
+              ..scale(0.6 + 0.4 * rise),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [Positioned.fill(child: base), Positioned.fill(child: cassette), Positioned.fill(child: cover)],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-              // Rewind 10s
-              IconButton(
-                iconSize: 24,
-                tooltip: 'Rewind 10s',
-                icon: const Icon(Icons.fast_rewind, color: Colors.white70),
-                onPressed: () {
-                  MechanicalSoundService.instance.playMechanicalSound(
-                    MechanicalSoundType.skipClick,
-                    settings: settings,
-                  );
-                  final target = position - const Duration(seconds: 10);
-                  ref.read(playbackNotifierProvider.notifier).seek(
-                        target > Duration.zero ? target : Duration.zero,
-                      );
-                },
-              ),
-
-              // Play / Pause Primary Button
-              GestureDetector(
-                onTap: () {
-                  ref.read(playbackNotifierProvider.notifier).togglePlayPause();
-                },
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: AppColors.neonOrange,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.neonOrange.withAlpha(160),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
+  Widget _controls() {
+    const muted = Color(0xFF8A8A90);
+    return AnimatedBuilder(
+      animation: _intro,
+      builder: (context, _) {
+        final a = _seg(0.8, 1.0, Curves.easeOut);
+        return Opacity(
+          opacity: a,
+          child: Transform.translate(
+            offset: Offset(0, 16 * (1 - a)),
+            child: SizedBox(
+              width: math.min(MediaQuery.of(context).size.width * 0.88, 420),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(playing ? 'Playing' : 'Tap to play',
+                    style: const TextStyle(color: muted, fontSize: 12, letterSpacing: 0.4)),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () => _setPlay(!playing),
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                    child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        color: Colors.black, size: 32),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                AnimatedBuilder(
+                  animation: _prog,
+                  builder: (context, _) => Row(children: [
+                    Text(_fmt(_prog.value * 60), style: const TextStyle(color: muted, fontSize: 12)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, c) => GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (d) => _prog.value = (d.localPosition.dx / c.maxWidth).clamp(0.0, 1.0),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: LinearProgressIndicator(
+                                  value: _prog.value,
+                                  minHeight: 4,
+                                  backgroundColor: const Color(0xFF2A2A2E),
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Icon(
-                    playbackState.isPlaying ? Icons.pause : Icons.play_arrow,
-                    size: 32,
-                    color: Colors.white,
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('1:00', style: TextStyle(color: muted, fontSize: 12)),
+                  ]),
                 ),
-              ),
-
-              // Fast Forward 10s
-              IconButton(
-                iconSize: 24,
-                tooltip: 'Fast Forward 10s',
-                icon: const Icon(Icons.fast_forward, color: Colors.white70),
-                onPressed: () {
-                  MechanicalSoundService.instance.playMechanicalSound(
-                    MechanicalSoundType.skipClick,
-                    settings: settings,
-                  );
-                  final target = position + const Duration(seconds: 10);
-                  ref.read(playbackNotifierProvider.notifier).seek(
-                        target < duration ? target : duration,
-                      );
-                },
-              ),
-
-              // Next
-              IconButton(
-                iconSize: 26,
-                tooltip: 'Next Track',
-                icon: const Icon(Icons.skip_next, color: Colors.white70),
-                onPressed: _skipNext,
-              ),
-
-              // Add to Mixtape
-              IconButton(
-                iconSize: 22,
-                tooltip: 'Record to Tape',
-                icon: const Icon(
-                  Icons.playlist_add_rounded,
-                  color: AppColors.tapeAmber,
+                const SizedBox(height: 6),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const NowPlayingScreen()),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFCFCFD4),
+                      side: const BorderSide(color: Color(0xFF333333)),
+                      shape: const StadiumBorder()),
+                  child: const Text('Use your own audio', style: TextStyle(fontSize: 12)),
                 ),
-                onPressed: () {
-                  AddToTapeModal.show(context, ref, track);
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderCover(Color accent, AudioTrack track) {
-    return Container(
-      color: const Color(0xFF1D1E24),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.album_outlined, size: 48, color: accent),
-            const SizedBox(height: 8),
-            Text(
-              track.album,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.monoSmall.copyWith(
-                color: Colors.white60,
-                fontSize: 10,
-              ),
+              ]),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
-/// Rotating cassette spool with hub spokes and wound magnetic tape
-class _LiveCassetteSpool extends StatelessWidget {
-  final double tapeRadius;
-
-  const _LiveCassetteSpool({required this.tapeRadius});
-
+class _CoverFront extends StatelessWidget {
+  final Song song;
+  const _CoverFront({required this.song});
   @override
   Widget build(BuildContext context) {
-    final clampedRadius = tapeRadius.clamp(8.0, 22.0);
-
-    return SizedBox(
-      width: 44,
-      height: 44,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Wound brown magnetic tape pancake
-          Container(
-            width: clampedRadius * 2,
-            height: clampedRadius * 2,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF452C1E),
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: Stack(fit: StackFit.expand, children: [
+        _Art(song.art, artworkPath: song.artworkPath),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(26, 14, 18, 12),
+            decoration: BoxDecoration(color: song.strip, boxShadow: const [
+              BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, 4))
+            ]),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(song.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: song.ink,
+                      fontSize: 20,
+                      height: 1.1,
+                      fontFamily: 'serif',
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 3),
+              Text(song.artist, style: TextStyle(color: song.ink.withAlpha(220), fontSize: 12, letterSpacing: 0.4)),
+            ]),
           ),
-          // White plastic hub ring with teeth
-          Container(
-            width: 22,
-            height: 22,
+        ),
+        // plastic hinge shading + gloss
+        Positioned(
+          left: 0, top: 0, bottom: 0, width: 12,
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFE5E5EB),
-              border: Border.all(color: const Color(0xFFB0B0BA), width: 1.5),
+              gradient: LinearGradient(colors: [Colors.black.withAlpha(90), Colors.white.withAlpha(50), Colors.transparent]),
             ),
           ),
-          // Center hole
-          Container(
-            width: 10,
-            height: 10,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF0C0C10),
-            ),
-          ),
-          // 6 Cog teeth radiating from center
-          for (int i = 0; i < 6; i++)
-            Transform.rotate(
-              angle: (i * 60) * math.pi / 180,
-              child: Container(
-                width: 2.2,
-                height: 18,
-                color: const Color(0xFF90909A),
+        ),
+        IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white30),
+              borderRadius: BorderRadius.circular(6),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.white.withAlpha(100), Colors.transparent, Colors.transparent, Colors.white.withAlpha(36)],
+                stops: const [0, 0.3, 0.62, 1],
               ),
             ),
-        ],
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _CoverBack extends StatelessWidget {
+  final Song song;
+  const _CoverBack({required this.song});
+  @override
+  Widget build(BuildContext context) {
+    const ink = Color(0xFF3A2A1C), faint = Color(0xFF8A6A4A);
+    Widget label(String t) => Padding(
+        padding: const EdgeInsets.only(top: 10, bottom: 2),
+        child: Text(t.toUpperCase(),
+            style: const TextStyle(color: faint, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 2)));
+    Widget body(String t) =>
+        Text(t, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: ink, fontSize: 13, height: 1.3, fontFamily: 'serif'));
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFE6CF),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white30),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          width: 210,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(height: 56, width: double.infinity, child: ClipRRect(borderRadius: BorderRadius.circular(3), child: _Art(song.art, artworkPath: song.artworkPath))),
+            const SizedBox(height: 10),
+            Text(song.album,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: ink, fontSize: 18, fontStyle: FontStyle.italic, fontFamily: 'serif')),
+            label('Artist'),
+            body(song.artist),
+            const Divider(color: Color(0x553A2A1C), height: 18),
+            label('Side A'),
+            body('01  ${song.title}'),
+            const Divider(color: Color(0x553A2A1C), height: 18),
+            label('Side B'),
+            body('Your own audio'),
+          ]),
+        ),
       ),
     );
   }
 }
 
-/// Tiny metallic screw in cassette corners
-class _CassetteScrew extends StatelessWidget {
-  const _CassetteScrew();
+// ───────────────────────── Clear cassette painter ─────────────────────────
+
+class CassettePainter extends CustomPainter {
+  final Song song;
+  final Animation<double> spin, progress;
+  CassettePainter(this.song, this.spin, this.progress)
+      : super(repaint: Listenable.merge([spin, progress]));
+
+  void _text(Canvas c, String s, Offset o,
+      {double size = 10,
+      Color color = Colors.white,
+      FontWeight w = FontWeight.normal,
+      double rot = math.pi / 2,
+      double maxW = double.infinity,
+      String? font,
+      FontStyle style = FontStyle.normal}) {
+    final tp = TextPainter(
+      text: TextSpan(
+          text: s,
+          style: TextStyle(fontSize: size, color: color, fontWeight: w, fontFamily: font, fontStyle: style)),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: maxW);
+    c.save();
+    c.translate(o.dx, o.dy);
+    c.rotate(rot);
+    tp.paint(c, Offset.zero);
+    c.restore();
+  }
+
+  void _screw(Canvas c, Offset o, {bool ring = false}) {
+    c.drawCircle(o, 7, Paint()..color = const Color(0xFF8A8D90));
+    c.drawCircle(o, 6, Paint()..style = PaintingStyle.stroke..color = ring ? Colors.white70 : const Color(0xFF1D1D1D));
+    if (!ring) {
+      final p = Paint()..color = const Color(0xFF222222)..strokeWidth = 1.5;
+      c.drawLine(o.translate(-4, 0), o.translate(4, 0), p);
+      c.drawLine(o.translate(0, -4), o.translate(0, 4), p);
+    }
+  }
+
+  void _spokes(Canvas c, Offset o, double r) {
+    c.drawCircle(o, r, Paint()..color = Colors.white.withAlpha(60));
+    final p = Paint()..color = Colors.white.withAlpha(210)..strokeWidth = 3;
+    for (var k = 0; k < 6; k++) {
+      final a = k * math.pi / 3;
+      c.drawLine(o, o + Offset(math.cos(a), math.sin(a)) * r, p);
+    }
+    c.drawCircle(o, r, Paint()..style = PaintingStyle.stroke..color = Colors.white70);
+  }
+
+  void _reel(Canvas c, Offset o, double pack, double angle) {
+    // tape pack: concentric layers
+    c.drawCircle(o, pack, Paint()..shader = const RadialGradient(colors: [Color(0xFF3B2416), Color(0xFF25160C)]).createShader(Rect.fromCircle(center: o, radius: pack)));
+    final ring = Paint()..style = PaintingStyle.stroke..strokeWidth = 0.5..color = const Color(0xFF120A05);
+    for (var r = 34.0; r < pack; r += 2.4) {
+      c.drawCircle(o, r, ring);
+    }
+    // hub
+    c.save();
+    c.translate(o.dx, o.dy);
+    c.rotate(angle);
+    c.drawCircle(Offset.zero, 35, Paint()..color = Colors.black38);
+    c.drawCircle(Offset.zero, 33, Paint()..color = const Color(0xFFE4E4E2));
+    final ringRect = Rect.fromCircle(center: Offset.zero, radius: 25);
+    final teeth = Paint()..style = PaintingStyle.stroke..strokeWidth = 16..color = const Color(0xFF8E9296);
+    for (var k = 0; k < 8; k++) {
+      c.drawArc(ringRect, k * math.pi / 4 + 0.12, 0.28, false, teeth);
+    }
+    c.drawCircle(Offset.zero, 17, Paint()..shader = const RadialGradient(colors: [Color(0xFFC5C8CA), Color(0xFF8F9498)]).createShader(Rect.fromCircle(center: Offset.zero, radius: 17)));
+    c.drawCircle(Offset.zero, 17, Paint()..style = PaintingStyle.stroke..strokeWidth = 2..color = const Color(0xFFE6E6E4));
+    c.drawArc(Rect.fromCircle(center: Offset.zero, radius: 27), math.pi * 0.85, 0.7, false,
+        Paint()..style = PaintingStyle.stroke..strokeWidth = 3..strokeCap = StrokeCap.round..color = const Color(0xFFB3122B));
+    c.restore();
+  }
+
+  @override
+  void paint(Canvas c, Size s) {
+    final full = Offset.zero & s;
+    final shell = RRect.fromRectAndRadius(full, const Radius.circular(9));
+    c.drawRRect(
+        shell,
+        Paint()
+          ..shader = const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFE4E8EA), Color(0xFFAAB0B4), Color(0xFFC9CFD2), Color(0xFF9DA3A7)],
+                  stops: [0, 0.38, 0.7, 1])
+              .createShader(full));
+    c.drawRRect(shell.deflate(1), Paint()..style = PaintingStyle.stroke..color = Colors.white70);
+
+    // grey window pane
+    final pane = RRect.fromLTRBR(57, 16, s.width - 4, s.height - 16, const Radius.circular(4));
+    c.drawRRect(
+        pane,
+        Paint()
+          ..shader = const LinearGradient(
+                  colors: [Color(0xFF4F5255), Color(0xFF7B7F82), Color(0xFFA2A6A8), Color(0xFF8D9194)],
+                  stops: [0, 0.24, 0.52, 1])
+              .createShader(pane.outerRect));
+    c.drawRRect(pane, Paint()..style = PaintingStyle.stroke..color = Colors.white30);
+
+    // clear head bracket (left)
+    final hd = RRect.fromLTRBR(5, s.height * .17, 53, s.height * .84, const Radius.circular(5));
+    c.drawRRect(hd, Paint()..color = Colors.white.withAlpha(75));
+    c.drawRRect(hd, Paint()..style = PaintingStyle.stroke..color = Colors.white.withAlpha(170));
+    final hole = Paint()..color = Colors.black.withAlpha(115);
+    for (final y in [hd.top + 17, hd.bottom - 17]) {
+      c.drawCircle(Offset(29, y), 6.5, hole);
+      c.drawCircle(Offset(29, y), 7.5, Paint()..style = PaintingStyle.stroke..color = Colors.white70);
+    }
+    for (final f in [.3, .68]) {
+      c.drawRect(Rect.fromCenter(center: Offset(29, hd.top + hd.height * f), width: 14, height: 14), hole);
+    }
+    _spokes(c, const Offset(22, 22), 15);
+    _spokes(c, Offset(22, s.height - 24), 15);
+
+    // printed text
+    _text(c, 'RMA. POS/PE I NORMAL POSITION', const Offset(71, 24), size: 6.2);
+    _text(c, 'BIAS 120 µs RMAL BIAS 120 µs EQ', const Offset(64, 24), size: 6.2);
+    _text(c, 'C-60', const Offset(85, 156), size: 25, w: FontWeight.w700);
+    _text(c, 'LOW NOISE', const Offset(80, 221), size: 11);
+    final guide = Paint()..color = Colors.white.withAlpha(150)..strokeWidth = 1;
+    for (var y = 168.0; y < 226; y += 7) {
+      c.drawLine(Offset(87, y), Offset(133, y), guide);
+    }
+
+    // reels + tape run
+    final p = progress.value, ang = spin.value * 2 * math.pi;
+    c.drawLine(const Offset(79, 166), const Offset(155, 225),
+        Paint()..strokeWidth = 2..color = const Color(0xBF3C3028));
+    _reel(c, const Offset(115, 101), 67 * (1 - .45 * p), ang);
+    _reel(c, const Offset(115, 241), 67 * (.55 + .45 * p), ang);
+
+    // paper label
+    final lab = RRect.fromLTRBR(151, 36, 187, 306, const Radius.circular(2));
+    c.drawShadow(Path()..addRRect(lab), Colors.black, 3, true);
+    c.drawRRect(lab, Paint()..color = const Color(0xFFF0E8D1));
+    c.drawCircle(const Offset(158, 90), 28, Paint()..color = const Color(0x20BE9F6E));
+    c.drawCircle(const Offset(180, 270), 30, Paint()..color = const Color(0x1EBE9F6E));
+    final a = TextPainter(
+        text: const TextSpan(text: 'A', style: TextStyle(color: Color(0xFFC1202F), fontSize: 20, fontWeight: FontWeight.w700)),
+        textDirection: TextDirection.ltr)
+      ..layout();
+    a.paint(c, Offset(169 - a.width / 2, 40));
+    c.drawLine(const Offset(156, 68), const Offset(182, 68), Paint()..color = const Color(0xFF333333)..strokeWidth = 1);
+    final fs = (250 / (song.title.length * .62)).clamp(9.0, 18.0).toDouble();
+    _text(c, song.title, Offset(169 + fs * .6, 74),
+        size: fs, color: const Color(0xFF17171F), w: FontWeight.w700, maxW: 200, font: 'cursive', style: FontStyle.italic);
+    _text(c, 'NR [ ]  ▢IN ▢OUT', const Offset(172, 288), size: 5.5, color: const Color(0xFF222222));
+
+    // screws
+    _screw(c, const Offset(13, 12));
+    _screw(c, Offset(s.width - 14, 15), ring: true);
+    _screw(c, Offset(15, s.height - 12));
+    _screw(c, const Offset(39, 167));
+
+    // gloss + scratches
+    c.drawRRect(
+        shell,
+        Paint()
+          ..shader = LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.white.withAlpha(100), Colors.transparent, Colors.transparent, Colors.white.withAlpha(56)],
+                  stops: const [0, .24, .68, 1])
+              .createShader(full));
+    final sc = Paint()..color = Colors.white.withAlpha(46)..strokeWidth = .6;
+    c.drawLine(const Offset(20, 250), const Offset(120, 40), sc);
+    c.drawLine(const Offset(70, 320), const Offset(190, 180), sc);
+    c.drawLine(const Offset(100, 20), const Offset(150, 110), sc);
+  }
+
+  @override
+  bool shouldRepaint(covariant CassettePainter old) => old.song != song;
+}
+
+/// Abstract artwork (falls back to gradient/radial blobs or real album artwork if available)
+class _Art extends StatelessWidget {
+  final int kind;
+  final String? artworkPath;
+  const _Art(this.kind, {this.artworkPath});
+
+  Widget _blob(Alignment c, double r, Color col) => Positioned.fill(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+                center: c, radius: r, colors: [col, col.withAlpha(0)], stops: const [0.55, 1.0]),
+          ),
+        ),
+      );
+
+  Widget _grad(List<Color> colors,
+          {Alignment begin = Alignment.topCenter, Alignment end = Alignment.bottomCenter}) =>
+      Positioned.fill(
+        child: DecoratedBox(
+          decoration: BoxDecoration(gradient: LinearGradient(begin: begin, end: end, colors: colors)),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: const Color(0xFF888890),
-        border: Border.all(color: const Color(0xFF555560), width: 0.8),
-      ),
-      child: Center(
-        child: Container(
-          width: 5,
-          height: 1,
-          color: const Color(0xFF33333A),
-        ),
-      ),
-    );
+    if (artworkPath != null && File(artworkPath!).existsSync()) {
+      return Image.file(
+        File(artworkPath!),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildFallbackArt(),
+      );
+    }
+    return _buildFallbackArt();
+  }
+
+  Widget _buildFallbackArt() {
+    final List<Widget> layers;
+    switch (kind) {
+      case 0:
+        layers = [
+          _grad(const [Color(0xFF9AB6CC), Color(0xFF2B3C4A)],
+              begin: Alignment.topLeft, end: Alignment.bottomRight),
+          _blob(const Alignment(0.55, -0.4), 0.75, const Color(0xFF2F5A3A)),
+          _blob(const Alignment(-0.6, 0.4), 0.6, const Color(0xFF6B7F8C)),
+        ];
+        break;
+      case 1:
+        layers = [
+          Positioned.fill(child: Container(color: const Color(0xFFE6E6E3))),
+          Positioned.fill(
+            child: FractionallySizedBox(
+              widthFactor: 0.64,
+              heightFactor: 0.6,
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF8A6A52), Color(0xFF3F2F26)]),
+                ),
+              ),
+            ),
+          ),
+        ];
+        break;
+      case 2:
+        layers = [
+          Positioned.fill(child: Container(color: const Color(0xFFFF6A2B))),
+          _blob(const Alignment(-0.5, -0.4), 0.55, const Color(0xFFFFD23F)),
+          _blob(const Alignment(0.55, -0.3), 0.6, const Color(0xFFFF8FB1)),
+          _blob(const Alignment(0.0, 1.0), 0.8, const Color(0xFF4CC06A)),
+        ];
+        break;
+      case 3:
+        layers = [
+          _grad(const [Color(0xFF233F95), Color(0xFF1A2A6A)]),
+          _blob(const Alignment(0.0, 1.1), 0.9, const Color(0xFFE8903A)),
+        ];
+        break;
+      case 4:
+        layers = [
+          _grad(const [Color(0xFF0D0B0A), Color(0xFF1B1612)]),
+          _blob(const Alignment(0.0, -1.1), 0.9, const Color(0xFFB8651F)),
+        ];
+        break;
+      case 5:
+        layers = [
+          _grad(const [Color(0xFFCFE3F2), Color(0xFF7FA8C9)],
+              begin: Alignment.topRight, end: Alignment.bottomLeft),
+          _blob(const Alignment(0.4, -0.2), 0.5, const Color(0xFFF2B6A0)),
+        ];
+        break;
+      default:
+        layers = [_grad(const [Color(0xFF8CC63F), Color(0xFF6FA82A)])];
+    }
+    return Stack(children: layers);
   }
 }

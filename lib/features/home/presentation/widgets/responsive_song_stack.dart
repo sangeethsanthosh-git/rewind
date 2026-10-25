@@ -7,9 +7,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/services/mechanical_sound_service.dart';
 import '../../../../core/widgets/artwork_widget.dart';
+import '../../../../core/widgets/realistic_cassette_opening_modal.dart';
 import '../../../audio_player/domain/audio_track.dart';
 import '../../../audio_player/presentation/providers/audio_player_provider.dart';
-import '../../../audio_player/presentation/screens/now_playing_screen.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// Responsive 3D Song Stack with acrylic cassette jewel box aesthetics,
@@ -115,13 +115,16 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     if (widget.onTrackTap != null) {
       widget.onTrackTap!(track);
     } else {
-      ref.read(playbackNotifierProvider.notifier).playTrack(
-        track,
-        queue: tracks,
-      );
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const NowPlayingScreen()),
-      );
+      final song = Song.fromAudioTrack(track, index);
+      Navigator.of(context).push(PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 450),
+        reverseTransitionDuration: const Duration(milliseconds: 350),
+        pageBuilder: (context, anim, secAnim) => CassettePage(
+          song: song,
+          allTracks: tracks,
+        ),
+        transitionsBuilder: (context, a, secAnim, child) => FadeTransition(opacity: a, child: child),
+      ));
     }
   }
 
@@ -194,6 +197,9 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
                 ),
               ),
             ),
+
+            // App name wording + subtitle scrolling up with stack
+            _Title(controller: _controller),
 
             // Retro Hi-Fi Stack HUD (Positioned above floating now-playing banner)
             _Hud(
@@ -765,6 +771,77 @@ class _Hud extends StatelessWidget {
                 ),
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// App name wording + subtitle. Sits in the open space above the first song and
+/// smoothly scrolls up with the stack as the user navigates.
+class _Title extends StatelessWidget {
+  final ScrollController controller;
+
+  const _Title({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = MediaQuery.of(context).size.height;
+    final gap = math.max(90.0, h * 0.165);
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      top: 14,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            final pos = controller.hasClients
+                ? controller.offset / _ResponsiveSongStackState.perSong
+                : 0.0;
+            final opacity = (1.0 - (pos * 0.85)).clamp(0.0, 1.0);
+            return Transform.translate(
+              offset: Offset(0, -pos * gap),
+              child: Opacity(
+                opacity: opacity,
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/images/wording.png',
+                height: 48,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Text(
+                  'REWIND',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: math.min(MediaQuery.of(context).size.width * 0.12, 54),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 10,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Listen to your music. Enjoy every moment.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF8A8A90),
+                    fontSize: 13,
+                    letterSpacing: 1.6,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

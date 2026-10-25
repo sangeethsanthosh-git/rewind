@@ -284,4 +284,64 @@ class AppDatabase {
     await db.delete('playback_history');
     await db.update('songs', {'play_count': 0});
   }
+
+  // --- Settings Persistence ---
+  Future<void> saveAllSettings(Map<String, String> settings) async {
+    final db = await database;
+    await _ensureSettingsTable(db);
+    final batch = db.batch();
+    for (final entry in settings.entries) {
+      batch.insert(
+        'app_settings',
+        {'key': entry.key, 'value': entry.value},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<void> saveSetting(String key, String value) async {
+    final db = await database;
+    await _ensureSettingsTable(db);
+    await db.insert(
+      'app_settings',
+      {'key': key, 'value': value},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<String?> getSetting(String key) async {
+    final db = await database;
+    await _ensureSettingsTable(db);
+    final maps = await db.query(
+      'app_settings',
+      columns: ['value'],
+      where: 'key = ?',
+      whereArgs: [key],
+    );
+    if (maps.isNotEmpty) {
+      return maps.first['value'] as String?;
+    }
+    return null;
+  }
+
+  Future<Map<String, String>> getAllSettings() async {
+    final db = await database;
+    await _ensureSettingsTable(db);
+    final maps = await db.query('app_settings');
+    final result = <String, String>{};
+    for (final row in maps) {
+      result[row['key'] as String] = row['value'] as String;
+    }
+    return result;
+  }
+
+  Future<void> _ensureSettingsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
+  }
 }

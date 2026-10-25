@@ -3,6 +3,7 @@ import 'package:spool/core/utils/formatters.dart';
 import 'package:spool/core/utils/audio_metadata_helper.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
 import 'package:spool/features/collections/domain/playlist_model.dart';
+import 'package:spool/features/settings/domain/app_settings.dart';
 
 void main() {
   group('Formatters Tests', () {
@@ -106,6 +107,33 @@ void main() {
       expect(model.name, 'Mixtape 1984');
       expect(model.colorAccent, 0xFFFF5E36);
       expect(model.trackCount, 12);
+    });
+  });
+
+  group('AppSettings Persistence Tests', () {
+    test('AppSettings persistence roundtrip preserves custom background, blur, and accent', () {
+      const original = AppSettings(
+        customBackgroundImagePath: '/storage/wallpaper.jpg',
+        backgroundBlurSigma: 12.5,
+        backgroundDimLevel: 0.65,
+        accentColorValue: 0xFF1DF74B,
+        enableMechanicalSounds: false,
+        enableCassetteSounds: true,
+        enableMotorAmbience: true,
+        enableHaptics: false,
+      );
+
+      final map = original.toPersistenceMap();
+      final restored = AppSettings.fromPersistenceMap(map);
+
+      expect(restored.customBackgroundImagePath, '/storage/wallpaper.jpg');
+      expect(restored.backgroundBlurSigma, 12.5);
+      expect(restored.backgroundDimLevel, 0.65);
+      expect(restored.accentColorValue, 0xFF1DF74B);
+      expect(restored.enableMechanicalSounds, isFalse);
+      expect(restored.enableCassetteSounds, isTrue);
+      expect(restored.enableMotorAmbience, isTrue);
+      expect(restored.enableHaptics, isFalse);
     });
   });
 }

@@ -33,18 +33,13 @@ class HomeScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    'assets/images/wording.png',
-                    height: 26,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Text(
-                      'REWIND',
-                      style: AppTypography.displayLarge.copyWith(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 4.0,
-                        color: Colors.white,
-                      ),
+                  Text(
+                    'REWIND',
+                    style: AppTypography.displayLarge.copyWith(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 4.0,
+                      color: Colors.white,
                     ),
                   ),
                   IconButton(

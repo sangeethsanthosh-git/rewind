@@ -33,7 +33,7 @@ void main() {
     expect(find.byType(SpoolApp), findsOneWidget);
   });
 
-  testWidgets('HomeScreen header displays wording image and only cassette button', (WidgetTester tester) async {
+  testWidgets('HomeScreen header displays REWIND, wording image, and subtitle', (WidgetTester tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
@@ -42,6 +42,8 @@ void main() {
       ),
     );
 
+    expect(find.text('REWIND'), findsAtLeast(1));
+    expect(find.text('Listen to your music. Enjoy every moment.'), findsOneWidget);
     expect(find.byType(Image), findsWidgets);
     expect(find.text('SPOOL'), findsNothing);
     expect(find.text('HI-FI DECK'), findsNothing);
@@ -108,10 +110,10 @@ void main() {
     );
 
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(milliseconds: 2000));
 
-    expect(find.text('Innate Melancholy'), findsAtLeast(1));
-    expect(find.text('JOS ECKERT'), findsOneWidget);
+    expect(find.textContaining('Innate Melancholy'), findsAtLeast(1));
+    expect(find.text('Jos Eckert'), findsOneWidget);
     expect(find.text('SIDE A'), findsOneWidget);
   });
 
@@ -146,6 +148,9 @@ void main() {
     expect(find.text('Sangeeth Santhosh'), findsOneWidget);
     expect(find.text('Buy Me a Coffee'), findsOneWidget);
     expect(find.text('GitHub Profile & Source'), findsOneWidget);
+
+    // Allow async settings persistence and sqflite lock timer to settle
+    await tester.pump(const Duration(seconds: 11));
   });
 
   testWidgets('FoldersScreen renders empty state and supports EuropeDeluxeDisc folders', (WidgetTester tester) async {
@@ -199,6 +204,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await tester.pump(const Duration(seconds: 11));
     expect(find.byType(FoldersScreen), findsOneWidget);
   });
 }

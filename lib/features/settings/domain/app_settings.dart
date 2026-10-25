@@ -111,4 +111,79 @@ class AppSettings {
       walkmanMode: walkmanMode ?? this.walkmanMode,
     );
   }
+
+  Map<String, String> toPersistenceMap() {
+    return {
+      'customBackgroundImagePath': customBackgroundImagePath ?? '',
+      'useSongBannerCanvas': useSongBannerCanvas ? '1' : '0',
+      'backgroundDimLevel': backgroundDimLevel.toString(),
+      'backgroundBlurSigma': backgroundBlurSigma.toString(),
+      'accentColorValue': accentColorValue.toString(),
+      'enableMechanicalSounds': enableMechanicalSounds ? '1' : '0',
+      'enableCassetteSounds': enableCassetteSounds ? '1' : '0',
+      'enableMotorAmbience': enableMotorAmbience ? '1' : '0',
+      'enableHaptics': enableHaptics ? '1' : '0',
+      'uiSoundVolume': uiSoundVolume.toString(),
+      'soundProfile': soundProfile.name,
+      'reducedAnimation': reducedAnimation ? '1' : '0',
+      'walkmanMode': walkmanMode ? '1' : '0',
+      'gaplessPlayback': gaplessPlayback ? '1' : '0',
+      'excludedFolders': excludedFolders.join('|'),
+    };
+  }
+
+  factory AppSettings.fromPersistenceMap(Map<String, String> map) {
+    const defaults = AppSettings();
+    final customBg = map['customBackgroundImagePath'];
+    final foldersStr = map['excludedFolders'];
+
+    return AppSettings(
+      customBackgroundImagePath: (customBg == null || customBg.isEmpty) ? null : customBg,
+      useSongBannerCanvas: map.containsKey('useSongBannerCanvas')
+          ? map['useSongBannerCanvas'] == '1'
+          : defaults.useSongBannerCanvas,
+      backgroundDimLevel: map.containsKey('backgroundDimLevel')
+          ? (double.tryParse(map['backgroundDimLevel']!) ?? defaults.backgroundDimLevel)
+          : defaults.backgroundDimLevel,
+      backgroundBlurSigma: map.containsKey('backgroundBlurSigma')
+          ? (double.tryParse(map['backgroundBlurSigma']!) ?? defaults.backgroundBlurSigma)
+          : defaults.backgroundBlurSigma,
+      accentColorValue: map.containsKey('accentColorValue')
+          ? (int.tryParse(map['accentColorValue']!) ?? defaults.accentColorValue)
+          : defaults.accentColorValue,
+      enableMechanicalSounds: map.containsKey('enableMechanicalSounds')
+          ? map['enableMechanicalSounds'] == '1'
+          : defaults.enableMechanicalSounds,
+      enableCassetteSounds: map.containsKey('enableCassetteSounds')
+          ? map['enableCassetteSounds'] == '1'
+          : defaults.enableCassetteSounds,
+      enableMotorAmbience: map.containsKey('enableMotorAmbience')
+          ? map['enableMotorAmbience'] == '1'
+          : defaults.enableMotorAmbience,
+      enableHaptics: map.containsKey('enableHaptics')
+          ? map['enableHaptics'] == '1'
+          : defaults.enableHaptics,
+      uiSoundVolume: map.containsKey('uiSoundVolume')
+          ? (double.tryParse(map['uiSoundVolume']!) ?? defaults.uiSoundVolume)
+          : defaults.uiSoundVolume,
+      soundProfile: map.containsKey('soundProfile')
+          ? MechanicalSoundProfile.values.firstWhere(
+              (p) => p.name == map['soundProfile'],
+              orElse: () => defaults.soundProfile,
+            )
+          : defaults.soundProfile,
+      reducedAnimation: map.containsKey('reducedAnimation')
+          ? map['reducedAnimation'] == '1'
+          : defaults.reducedAnimation,
+      walkmanMode: map.containsKey('walkmanMode')
+          ? map['walkmanMode'] == '1'
+          : defaults.walkmanMode,
+      gaplessPlayback: map.containsKey('gaplessPlayback')
+          ? map['gaplessPlayback'] == '1'
+          : defaults.gaplessPlayback,
+      excludedFolders: (foldersStr != null && foldersStr.isNotEmpty)
+          ? foldersStr.split('|')
+          : defaults.excludedFolders,
+    );
+  }
 }
