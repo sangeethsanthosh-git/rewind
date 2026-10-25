@@ -3,20 +3,27 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
 import 'package:spool/core/services/mechanical_sound_service.dart';
+import 'package:spool/core/widgets/retro_walkman_widget.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
 import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
-import 'package:spool/features/audio_player/presentation/screens/walkman_player_screen.dart';
 import 'package:spool/features/home/presentation/widgets/responsive_song_stack.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
 import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   final Function(int targetTabIndex)? onNavigateToTab;
 
   const HomeScreen({super.key, this.onNavigateToTab});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _showWalkmanDeck = false;
+
+  @override
+  Widget build(BuildContext context) {
     final libraryState = ref.watch(libraryNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
     final allSongs = libraryState.allSongs;
@@ -44,21 +51,60 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    icon: Icon(Icons.radio_outlined, color: settings.accentColor, size: 26),
-                    tooltip: 'Walkman Deck Mode',
+                    icon: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: _showWalkmanDeck
+                          ? BoxDecoration(
+                              color: settings.accentColor.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: settings.accentColor, width: 1.2),
+                            )
+                          : null,
+                      child: Icon(Icons.radio_outlined, color: settings.accentColor, size: 24),
+                    ),
+                    tooltip: _showWalkmanDeck ? 'Hide Walkman Deck' : 'Walkman Deck Mode',
                     onPressed: () {
                       MechanicalSoundService.instance.playMechanicalSound(
                         MechanicalSoundType.doorLatch,
                         settings: settings,
                       );
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const WalkmanPlayerScreen()),
-                      );
+                      setState(() {
+                        _showWalkmanDeck = !_showWalkmanDeck;
+                      });
                     },
                   ),
                 ],
               ),
             ),
+
+            // Collapsible Retro Walkman Deck Widget directly on Home Screen
+            if (_showWalkmanDeck)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    RetroWalkmanWidget(
+                      onOpenNowPlaying: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const NowPlayingScreen()),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textMuted),
+                        tooltip: 'Close Deck',
+                        onPressed: () {
+                          setState(() => _showWalkmanDeck = false);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             // Scanning progress indicator banner
             if (libraryState.scanProgress?.isScanning == true)

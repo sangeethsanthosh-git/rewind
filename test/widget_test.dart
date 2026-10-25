@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:spool/core/widgets/europe_deluxe_disc.dart';
 import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
+import 'package:spool/core/widgets/retro_walkman_widget.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
 import 'package:spool/features/home/presentation/screens/home_screen.dart';
 import 'package:spool/features/library/domain/folder_model.dart';
@@ -50,6 +51,31 @@ void main() {
     expect(find.byIcon(Icons.radio_outlined), findsOneWidget);
     expect(find.byIcon(Icons.sync_rounded), findsNothing);
     expect(find.byIcon(Icons.tune_outlined), findsNothing);
+  });
+
+  testWidgets('HomeScreen toggles RetroWalkmanWidget when radio icon is tapped', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: HomeScreen(),
+        ),
+      ),
+    );
+
+    // Tap radio icon to expand the Walkman Deck Widget on Home Screen
+    await tester.tap(find.byIcon(Icons.radio_outlined));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byType(RetroWalkmanWidget), findsOneWidget);
+    expect(find.text('STANDBY'), findsOneWidget);
+    expect(find.byIcon(Icons.play_arrow_rounded), findsAtLeast(1));
+
+    // Tap close button to collapse deck
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    // Verify it smoothly collapsed
+    expect(find.byIcon(Icons.close_rounded), findsNothing);
   });
 
   testWidgets('EuropeDeluxeDisc renders cleanly and handles tap', (WidgetTester tester) async {

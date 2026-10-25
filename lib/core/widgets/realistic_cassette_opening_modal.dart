@@ -305,7 +305,7 @@ class _CassettePageState extends ConsumerState<CassettePage> with TickerProvider
               ..setEntry(3, 2, 0.0006)
               ..rotateX(0.96 * (1 - rise) + 0.1 * open)
               ..rotateY(-0.14 * open)
-              ..scale(0.6 + 0.4 * rise),
+              ..scaleByDouble(0.6 + 0.4 * rise, 0.6 + 0.4 * rise, 1.0, 1.0),
             child: Stack(
               clipBehavior: Clip.none,
               children: [Positioned.fill(child: base), Positioned.fill(child: cassette), Positioned.fill(child: cover)],

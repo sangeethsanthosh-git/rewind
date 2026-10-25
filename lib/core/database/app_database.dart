@@ -6,13 +6,25 @@ import '../../features/audio_player/domain/audio_track.dart';
 class AppDatabase {
   static final AppDatabase instance = AppDatabase._init();
   static Database? _database;
+  static Completer<Database>? _dbOpenCompleter;
 
   AppDatabase._init();
 
   Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDB('spool_music.db');
-    return _database!;
+    if (_database != null && _database!.isOpen) return _database!;
+    if (_dbOpenCompleter != null) return _dbOpenCompleter!.future;
+
+    final completer = Completer<Database>();
+    _dbOpenCompleter = completer;
+    try {
+      _database = await _initDB('spool_music.db');
+      completer.complete(_database);
+      return _database!;
+    } catch (e) {
+      completer.completeError(e);
+      _dbOpenCompleter = null;
+      rethrow;
+    }
   }
 
   Future<Database> _initDB(String filePath) async {
@@ -33,6 +45,12 @@ class AppDatabase {
         await db.execute('ALTER TABLE songs ADD COLUMN custom_art_path TEXT;');
       } catch (_) {}
     }
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -87,6 +105,13 @@ class AppDatabase {
         song_id TEXT NOT NULL,
         played_at INTEGER NOT NULL,
         FOREIGN KEY (song_id) REFERENCES songs (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       )
     ''');
 
