@@ -1,8 +1,16 @@
-# Rewind 📼
+#<img width="2172" height="724" alt="wording" src="https://github.com/user-attachments/assets/be9325ab-ae0f-4ff6-ad5b-c4a40036f85b" />
+
 
 > **Retro Portable Cassette Walkman Local Audio Player for Android**  
 > *Physical feel first. Instant response always.*
 
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/fb4b9ca5-2c23-4882-81f9-ed4f3f316369"
+    alt="Rewind Logo"
+    width="180"
+  />
+</p>
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
 [![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android)](https://android.com)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
