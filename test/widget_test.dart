@@ -7,6 +7,10 @@ import 'package:spool/core/widgets/europe_deluxe_disc.dart';
 import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
 import 'package:spool/core/widgets/retro_walkman_widget.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
+import 'package:spool/features/audio_player/data/audio_player_service.dart';
+import 'package:spool/features/audio_player/domain/playback_state.dart';
+import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
+import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
 import 'package:spool/features/audio_player/presentation/screens/walkman_player_screen.dart';
 import 'package:spool/features/home/presentation/screens/home_screen.dart';
 import 'package:spool/features/library/domain/folder_model.dart';
@@ -14,6 +18,21 @@ import 'package:spool/features/library/presentation/screens/folders_screen.dart'
 import 'package:spool/features/settings/presentation/screens/settings_screen.dart';
 import 'package:spool/features/navigation/presentation/screens/main_shell_screen.dart';
 import 'package:spool/main.dart';
+
+class _QuietTestAudioService extends AudioPlayerService {
+  final SpoolPlaybackState initialState;
+  _QuietTestAudioService([this.initialState = const SpoolPlaybackState()]);
+
+  @override
+  SpoolPlaybackState get currentState => initialState;
+
+  @override
+  Stream<SpoolPlaybackState> get stateStream => const Stream.empty();
+}
+
+class _FixedTrackPlaybackNotifier extends PlaybackNotifier {
+  _FixedTrackPlaybackNotifier(super.service);
+}
 
 void main() {
   setUpAll(() {
@@ -358,5 +377,76 @@ void main() {
     expect(find.byType(WalkmanPlayerScreen), findsOneWidget);
     expect(find.text('SONY'), findsOneWidget);
     expect(find.text('WALKMAN'), findsWidgets);
+  });
+
+  testWidgets('NowPlayingScreen conditionally shows or hides lyrics tab based on track metadata', (WidgetTester tester) async {
+    const trackNoLyrics = AudioTrack(
+      id: 'track_1',
+      title: 'Instrumental',
+      artist: 'Retro Artist',
+      album: 'Tape 1',
+      durationMs: 120000,
+      uri: 'test://track_1',
+      path: '/test/track_1.mp3',
+      fileExtension: 'mp3',
+      lyrics: null,
+    );
+
+    final service = _QuietTestAudioService(const SpoolPlaybackState(
+      currentTrack: trackNoLyrics,
+      isPlaying: false,
+      position: Duration.zero,
+      duration: Duration(seconds: 120),
+    ));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        key: const ValueKey('no_lyrics_scope'),
+        overrides: [
+          playbackNotifierProvider.overrideWith((ref) => _FixedTrackPlaybackNotifier(service)),
+        ],
+        child: const MaterialApp(
+          home: NowPlayingScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('LYRICS'), findsNothing);
+
+    const trackWithLyrics = AudioTrack(
+      id: 'track_2',
+      title: 'Song with Words',
+      artist: 'Retro Artist',
+      album: 'Tape 2',
+      durationMs: 120000,
+      uri: 'test://track_2',
+      path: '/test/track_2.mp3',
+      fileExtension: 'mp3',
+      lyrics: 'Line 1: Memory on magnetic tape\nLine 2: Rewinding back to start',
+    );
+
+    final service2 = _QuietTestAudioService(const SpoolPlaybackState(
+      currentTrack: trackWithLyrics,
+      isPlaying: false,
+      position: Duration.zero,
+      duration: Duration(seconds: 120),
+    ));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        key: const ValueKey('with_lyrics_scope'),
+        overrides: [
+          playbackNotifierProvider.overrideWith((ref) => _FixedTrackPlaybackNotifier(service2)),
+        ],
+        child: const MaterialApp(
+          home: NowPlayingScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('LYRICS'), findsOneWidget);
+    expect(find.text('LYRICS'), findsOneWidget);
   });
 }

@@ -27,14 +27,13 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
   Widget build(BuildContext context) {
     final libraryState = ref.watch(libraryNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
-    final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
     final accentColor = settings.accentColor;
     final folders = libraryState.folders;
 
     return Scaffold(
-      backgroundColor: themePalette.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: themePalette.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +160,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
 
         return VhsSpineCard(
           title: folder.name,
-          subtitle: '${folder.trackCount} tracks • ${folder.path}',
+          subtitle: '${folder.trackCount} tracks â€¢ ${folder.path}',
           tabColor: tabColor,
           dateBadge: '${folder.trackCount} TRKS',
           onTap: () => _showFolderTracks(context, ref, folder),
@@ -229,7 +228,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
                               style: AppTypography.displaySmall.copyWith(fontSize: 16),
                             ),
                             Text(
-                              '${folder.trackCount} TRACKS • ${folder.path}',
+                              '${folder.trackCount} TRACKS â€¢ ${folder.path}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.monoSmall.copyWith(
@@ -305,7 +304,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
                           ),
                         ),
                         subtitle: Text(
-                          '${track.artist} • ${track.fileExtension.toUpperCase()}',
+                          '${track.artist} â€¢ ${track.fileExtension.toUpperCase()}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.bodySmall.copyWith(fontSize: 11),

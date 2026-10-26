@@ -1,4 +1,4 @@
-class AudioMetadataHelper {
+﻿class AudioMetadataHelper {
   static const Set<String> supportedExtensions = {
     'mp3',
     'aac',

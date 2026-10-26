@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
@@ -217,7 +217,7 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
                               ),
                               Text(
                                 isFolderMode
-                                    ? '${activeFolder?.trackCount ?? 0} TRACKS • ${activeIdx + 1} OF $itemCount FOLDERS'
+                                    ? '${activeFolder?.trackCount ?? 0} TRACKS â€¢ ${activeIdx + 1} OF $itemCount FOLDERS'
                                     : (activeTrack?.artist ?? widget.subtitle),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

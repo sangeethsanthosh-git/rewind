@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:spool/core/constants/app_typography.dart';
 import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/features/settings/domain/app_settings.dart';

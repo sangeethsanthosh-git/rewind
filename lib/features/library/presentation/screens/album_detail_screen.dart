@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -208,7 +208,7 @@ class AlbumDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   subtitle: Text(
-                    '${track.fileExtension.toUpperCase()} • ${Formatters.formatDurationMs(track.durationMs)}',
+                    '${track.fileExtension.toUpperCase()} â€¢ ${Formatters.formatDurationMs(track.durationMs)}',
                     style: AppTypography.monoSmall.copyWith(
                       color: isCurrent ? AppColors.tapeAmber : AppColors.textMuted,
                       fontSize: 10,

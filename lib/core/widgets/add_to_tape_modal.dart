@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
@@ -327,7 +327,7 @@ class _AddToTapeContentState extends ConsumerState<_AddToTapeContent> {
                         ),
                       ),
                       subtitle: Text(
-                        '${tape.trackCount} tracks • Tape Cassette',
+                        '${tape.trackCount} tracks â€¢ Tape Cassette',
                         style: AppTypography.monoSmall.copyWith(
                           fontSize: 10,
                           color: AppColors.textMuted,

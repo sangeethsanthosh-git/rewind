@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/audio_player_service.dart';
 import '../../domain/playback_state.dart';

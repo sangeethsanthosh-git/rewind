@@ -22,11 +22,12 @@ class SettingsScreen extends ConsumerWidget {
     final settings = ref.watch(settingsNotifierProvider);
     final settingsNotifier = ref.read(settingsNotifierProvider.notifier);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
+    final accentFg = settings.accentColor.computeLuminance() > 0.6 ? const Color(0xFF111116) : Colors.white;
 
     return Scaffold(
-      backgroundColor: themePalette.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: themePalette.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'PREFERENCES',
@@ -69,14 +70,18 @@ class SettingsScreen extends ConsumerWidget {
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: settings.accentColor,
-                          foregroundColor: Colors.white,
+                          foregroundColor: accentFg,
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        icon: const Icon(Icons.add_photo_alternate_outlined, size: 16),
+                        icon: Icon(Icons.add_photo_alternate_outlined, size: 16, color: accentFg),
                         label: Text(
                           settings.customBackgroundImagePath != null ? 'CHANGE' : 'UPLOAD',
-                          style: AppTypography.monoSmall.copyWith(fontWeight: FontWeight.bold, fontSize: 10.5),
+                          style: AppTypography.monoSmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10.5,
+                            color: accentFg,
+                          ),
                         ),
                         onPressed: () async {
                           final files = await FilePicker.pickFiles(type: FileType.image);
@@ -622,7 +627,7 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 Text('REWIND V1.0.0 (WALKMAN SIGNATURE)', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                 const SizedBox(height: 4),
-                Text('Handcrafted with Flutter • Offline First', style: AppTypography.bodySmall.copyWith(fontSize: 10)),
+                Text('Handcrafted with Flutter â€¢ Offline First', style: AppTypography.bodySmall.copyWith(fontSize: 10)),
               ],
             ),
           ),

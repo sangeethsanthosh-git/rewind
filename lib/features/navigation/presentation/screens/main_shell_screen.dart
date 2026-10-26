@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -349,7 +349,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                             const SizedBox(width: 5),
                             Expanded(
                               child: Text(
-                                '${track.artist} • ${track.fileExtension.toUpperCase()}',
+                                '${track.artist} â€¢ ${track.fileExtension.toUpperCase()}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.bodySmall.copyWith(

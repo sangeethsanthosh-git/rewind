@@ -43,13 +43,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
   Widget build(BuildContext context) {
     final libraryState = ref.watch(libraryNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
-    final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
     final accentColor = settings.accentColor;
 
     return Scaffold(
-      backgroundColor: themePalette.background,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: themePalette.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'MUSIC LIBRARY',
@@ -166,7 +165,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             ),
           ),
           subtitle: Text(
-            '${track.artist} • ${track.album}',
+            '${track.artist} â€¢ ${track.album}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.bodySmall,
@@ -368,7 +367,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
 
         return VhsSpineCard(
           title: artist.name,
-          subtitle: '${artist.albumCount} albums • ${artist.trackCount} tracks',
+          subtitle: '${artist.albumCount} albums â€¢ ${artist.trackCount} tracks',
           tabColor: tabColor,
           onTap: () {
             ref.read(playbackNotifierProvider.notifier).playTrack(
@@ -568,7 +567,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
 
                     return VhsSpineCard(
                       title: folder.name,
-                      subtitle: '${folder.trackCount} songs • ${folder.path}',
+                      subtitle: '${folder.trackCount} songs â€¢ ${folder.path}',
                       tabColor: tabColor,
                       onTap: () {
                         setState(() {

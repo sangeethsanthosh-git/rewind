@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import '../constants/app_colors.dart';
@@ -181,7 +181,7 @@ class ArtworkWidget extends StatelessWidget {
             Positioned(
               bottom: 8,
               child: Text(
-                title.isNotEmpty ? title[0].toUpperCase() : '♫',
+                title.isNotEmpty ? title[0].toUpperCase() : 'â™«',
                 style: AppTypography.monoSmall.copyWith(
                   color: Colors.white.withAlpha(200),
                   fontWeight: FontWeight.bold,

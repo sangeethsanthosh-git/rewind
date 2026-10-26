@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
-import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
+import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
+import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
 import 'package:spool/features/home/presentation/widgets/responsive_song_stack.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
+import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   final Function(int targetTabIndex)? onNavigateToTab;
@@ -82,22 +84,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ResponsiveSongStack(
                     tracks: allSongs,
                     onTrackTap: (track) {
-                      final trackIndex = allSongs.indexWhere((t) => t.id == track.id);
-                      final song = Song.fromAudioTrack(track, trackIndex >= 0 ? trackIndex : 0);
                       ref.read(playbackNotifierProvider.notifier).playTrack(
                         track,
                         queue: allSongs,
                       );
-                      Navigator.of(context).push(PageRouteBuilder(
-                        transitionDuration: const Duration(milliseconds: 450),
-                        reverseTransitionDuration: const Duration(milliseconds: 350),
-                        pageBuilder: (context, anim, secAnim) => CassettePage(
-                          song: song,
-                          allTracks: allSongs,
+                      MechanicalSoundService.instance.playMechanicalSound(
+                        MechanicalSoundType.playClack,
+                        settings: ref.read(settingsNotifierProvider),
+                      );
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const NowPlayingScreen(),
                         ),
-                        transitionsBuilder: (context, a, secAnim, child) =>
-                            FadeTransition(opacity: a, child: child),
-                      ));
+                      );
                     },
                   ),
                   if (allSongs.isEmpty && libraryState.scanProgress?.isScanning != true)

@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -10,6 +10,7 @@ class AudioMetadataResult {
   final String? genre;
   final int? trackNumber;
   final String? artworkPath;
+  final String? lyrics;
 
   const AudioMetadataResult({
     this.title,
@@ -18,6 +19,7 @@ class AudioMetadataResult {
     this.genre,
     this.trackNumber,
     this.artworkPath,
+    this.lyrics,
   });
 }
 
@@ -75,6 +77,7 @@ class AudioTagExtractor {
       String? genre;
       int? trackNumber;
       String? artworkPath;
+      String? lyrics;
 
       while (true) {
         final blockHeader = await raf.read(4);
@@ -133,6 +136,9 @@ class AudioTagExtractor {
                       if (key == 'ARTIST' && artist == null) artist = val;
                       if (key == 'ALBUM' && album == null) album = val;
                       if (key == 'GENRE' && genre == null) genre = val;
+                      if ((key == 'LYRICS' || key == 'UNSYNCEDLYRICS') && lyrics == null) {
+                        lyrics = val;
+                      }
                       if (key == 'TRACKNUMBER' && trackNumber == null) {
                         trackNumber = int.tryParse(val.split('/')[0].trim());
                       }
@@ -159,6 +165,7 @@ class AudioTagExtractor {
         genre: genre,
         trackNumber: trackNumber,
         artworkPath: artworkPath,
+        lyrics: lyrics,
       );
     } finally {
       await raf.close();
@@ -190,6 +197,7 @@ class AudioTagExtractor {
       String? artist;
       String? album;
       String? artworkPath;
+      String? lyrics;
 
       while (offset + 10 < tagData.length) {
         final frameId = String.fromCharCodes(tagData.sublist(offset, offset + 4));
@@ -257,6 +265,21 @@ class AudioTagExtractor {
           artist = _decodeTextFrame(frameBytes);
         } else if (frameId == 'TALB' && album == null) {
           album = _decodeTextFrame(frameBytes);
+        } else if ((frameId == 'USLT' || frameId == 'SYLT' || frameId == 'ULT') && lyrics == null) {
+          if (frameBytes.length > 4) {
+            int lOffset = 4; // skip encoding byte + 3-char language
+            while (lOffset < frameBytes.length && frameBytes[lOffset] != 0) {
+              lOffset++;
+            }
+            lOffset++; // skip null descriptor terminator
+            if (lOffset < frameBytes.length) {
+              try {
+                lyrics = _decodeTextFrame(Uint8List.fromList([frameBytes[0], ...frameBytes.sublist(lOffset)]));
+              } catch (_) {
+                lyrics = String.fromCharCodes(frameBytes.sublist(lOffset));
+              }
+            }
+          }
         }
       }
 
@@ -265,6 +288,7 @@ class AudioTagExtractor {
         artist: artist,
         album: album,
         artworkPath: artworkPath,
+        lyrics: lyrics,
       );
     } finally {
       await raf.close();

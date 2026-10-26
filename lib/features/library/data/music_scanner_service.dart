@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:path/path.dart' as p;
@@ -104,12 +104,23 @@ class MusicScannerService {
         final isLossless = AudioMetadataHelper.isLosslessFormat(effectiveExt);
 
         String? extractedArt;
-        if (isLossless || song.albumId == null) {
-          try {
-            final meta = await AudioTagExtractor.extract(filePath);
-            extractedArt = meta.artworkPath;
-          } catch (_) {}
-        }
+        String? lyrics;
+
+        // Check companion .lrc file first
+        try {
+          final lrcFile = File(p.setExtension(filePath, '.lrc'));
+          if (lrcFile.existsSync()) {
+            lyrics = lrcFile.readAsStringSync().trim();
+          }
+        } catch (_) {}
+
+        try {
+          final meta = await AudioTagExtractor.extract(filePath);
+          extractedArt = meta.artworkPath;
+          if (lyrics == null || lyrics.isEmpty) {
+            lyrics = meta.lyrics?.trim();
+          }
+        } catch (_) {}
 
         final track = AudioTrack(
           id: 'ms_${song.id}',
@@ -131,6 +142,7 @@ class MusicScannerService {
           isLossless: isLossless,
           bitrate: isLossless ? null : 320,
           customArtPath: extractedArt,
+          lyrics: (lyrics != null && lyrics.isNotEmpty) ? lyrics : null,
         );
 
         tracks.add(track);
@@ -191,8 +203,19 @@ class MusicScannerService {
               }
             }
 
+            String? lyrics;
+            try {
+              final lrcFile = File(p.setExtension(entity.path, '.lrc'));
+              if (lrcFile.existsSync()) {
+                lyrics = lrcFile.readAsStringSync().trim();
+              }
+            } catch (_) {}
+
             // Extract actual embedded metadata (Vorbis, ID3, embedded PICTURE)
             final meta = await AudioTagExtractor.extract(entity.path);
+            if (lyrics == null || lyrics.isEmpty) {
+              lyrics = meta.lyrics?.trim();
+            }
 
             final track = AudioTrack(
               id: 'file_${entity.path.hashCode.abs()}',
@@ -213,6 +236,7 @@ class MusicScannerService {
               genre: meta.genre,
               trackNumber: meta.trackNumber,
               customArtPath: meta.artworkPath,
+              lyrics: (lyrics != null && lyrics.isNotEmpty) ? lyrics : null,
             );
             discoveredTracks.add(track);
           }

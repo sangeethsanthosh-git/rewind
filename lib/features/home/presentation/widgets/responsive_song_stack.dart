@@ -7,7 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../core/services/mechanical_sound_service.dart';
 import '../../../../core/widgets/artwork_widget.dart';
-import '../../../../core/widgets/realistic_cassette_opening_modal.dart';
+import '../../../audio_player/presentation/screens/now_playing_screen.dart';
 import '../../../audio_player/domain/audio_track.dart';
 import '../../../audio_player/presentation/providers/audio_player_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
@@ -145,15 +145,9 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
       ref
           .read(playbackNotifierProvider.notifier)
           .playTrack(track, queue: tracks);
-      final song = Song.fromAudioTrack(track, index);
       Navigator.of(context).push(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 450),
-          reverseTransitionDuration: const Duration(milliseconds: 350),
-          pageBuilder: (context, anim, secAnim) =>
-              CassettePage(song: song, allTracks: tracks),
-          transitionsBuilder: (context, a, secAnim, child) =>
-              FadeTransition(opacity: a, child: child),
+        MaterialPageRoute(
+          builder: (context) => const NowPlayingScreen(),
         ),
       );
     }
@@ -809,7 +803,7 @@ class _Hud extends StatelessWidget {
                               ),
                             ),
                             TextSpan(
-                              text: '• ${track.artist}',
+                              text: 'â€¢ ${track.artist}',
                               style: const TextStyle(color: muted),
                             ),
                           ],

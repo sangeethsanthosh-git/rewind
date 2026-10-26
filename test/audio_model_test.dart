@@ -72,6 +72,7 @@ void main() {
         sampleRate: 96000,
         isFavorite: true,
         customArtPath: '/storage/emulated/0/Music/AbbeyRoad/cover.jpg',
+        lyrics: 'Here come old flat top\nHe come grooving up slowly',
       );
 
       final map = track.toMap();
@@ -89,6 +90,7 @@ void main() {
       expect(restored.sampleRate, 96000);
       expect(restored.isFavorite, isTrue);
       expect(restored.customArtPath, '/storage/emulated/0/Music/AbbeyRoad/cover.jpg');
+      expect(restored.lyrics, 'Here come old flat top\nHe come grooving up slowly');
     });
   });
 

@@ -1,4 +1,4 @@
-import '../../audio_player/domain/audio_track.dart';
+﻿import '../../audio_player/domain/audio_track.dart';
 
 class ArtistModel {
   final String name;

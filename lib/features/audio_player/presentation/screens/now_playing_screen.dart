@@ -24,6 +24,7 @@ enum NowPlayingVisualMode {
   banner,
   cassette,
   crtOscilloscope,
+  lyrics,
 }
 
 class NowPlayingScreen extends ConsumerStatefulWidget {
@@ -79,6 +80,10 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
         ? Duration(milliseconds: _dragPosition.toInt())
         : playbackState.position;
     final remaining = duration > position ? duration - position : Duration.zero;
+    final hasLyrics = track.lyrics != null && track.lyrics!.trim().isNotEmpty;
+    if (!hasLyrics && _visualMode == NowPlayingVisualMode.lyrics) {
+      _visualMode = NowPlayingVisualMode.cassette;
+    }
 
     return Scaffold(
       backgroundColor: themePalette.background,
@@ -175,6 +180,8 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                   _buildModeTab('BANNER', NowPlayingVisualMode.banner, Icons.image_outlined, settings.accentColor),
                   _buildModeTab('CASSETTE', NowPlayingVisualMode.cassette, Icons.subtitles_outlined, settings.accentColor),
                   _buildModeTab('OSCILLO', NowPlayingVisualMode.crtOscilloscope, Icons.graphic_eq_rounded, settings.accentColor),
+                  if (hasLyrics)
+                    _buildModeTab('LYRICS', NowPlayingVisualMode.lyrics, Icons.lyrics_outlined, settings.accentColor),
                 ],
               ),
             ),
@@ -345,6 +352,23 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     icon: const Icon(Icons.queue_music, color: AppColors.textSecondary, size: 26),
                     onPressed: () => _showQueueModal(context, playbackState),
                   ),
+                  // Lyrics Button (ONLY shown if song metadata has lyrics)
+                  if (hasLyrics)
+                    IconButton(
+                      icon: Icon(
+                        _visualMode == NowPlayingVisualMode.lyrics ? Icons.lyrics : Icons.lyrics_outlined,
+                        color: _visualMode == NowPlayingVisualMode.lyrics ? settings.accentColor : AppColors.textSecondary,
+                        size: 24,
+                      ),
+                      tooltip: 'View Lyrics',
+                      onPressed: () {
+                        setState(() {
+                          _visualMode = _visualMode == NowPlayingVisualMode.lyrics
+                              ? NowPlayingVisualMode.cassette
+                              : NowPlayingVisualMode.lyrics;
+                        });
+                      },
+                    ),
                 ],
               ),
             ),
@@ -716,8 +740,105 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                 ],
               ),
             );
+          case NowPlayingVisualMode.lyrics:
+            final lyricsH = availableH * 0.90;
+            final lyricsW = math.min(availableW * 0.92, 440.0);
+            return _buildLyricsView(
+              track.lyrics ?? '',
+              width: lyricsW,
+              height: lyricsH,
+              accentColor: settings.accentColor,
+            );
         }
       },
+    );
+  }
+
+  Widget _buildLyricsView(
+    String rawLyrics, {
+    required double width,
+    required double height,
+    required Color accentColor,
+  }) {
+    // Strip LRC timestamps like [00:12.34]
+    final lines = rawLyrics.split('\n').map((l) {
+      return l.replaceAll(RegExp(r'\[\d{2}:\d{2}\.?\d*\]'), '').trim();
+    }).where((l) => l.isNotEmpty).toList();
+
+    return Container(
+      width: width,
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xDC14151B),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withAlpha(100), width: 1.2),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black54,
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lyrics, size: 14, color: accentColor),
+              const SizedBox(width: 6),
+              Text(
+                'METADATA LYRICS',
+                style: AppTypography.monoSmall.copyWith(
+                  color: accentColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.white,
+                  Colors.white,
+                  Colors.transparent,
+                ],
+                stops: [0.0, 0.08, 0.92, 1.0],
+              ).createShader(bounds),
+              blendMode: BlendMode.dstIn,
+              child: ListView.separated(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                itemCount: lines.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  return Center(
+                    child: Text(
+                      lines[index],
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withAlpha(235),
+                        height: 1.4,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

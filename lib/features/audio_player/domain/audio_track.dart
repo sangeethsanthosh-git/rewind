@@ -1,4 +1,4 @@
-class AudioTrack {
+﻿class AudioTrack {
   final String id;
   final String title;
   final String artist;
@@ -18,6 +18,7 @@ class AudioTrack {
   final bool isFavorite;
   final int playCount;
   final String? customArtPath;
+  final String? lyrics;
 
   const AudioTrack({
     required this.id,
@@ -39,6 +40,7 @@ class AudioTrack {
     this.isFavorite = false,
     this.playCount = 0,
     this.customArtPath,
+    this.lyrics,
   });
 
   AudioTrack copyWith({
@@ -61,6 +63,7 @@ class AudioTrack {
     bool? isFavorite,
     int? playCount,
     String? customArtPath,
+    String? lyrics,
   }) {
     return AudioTrack(
       id: id ?? this.id,
@@ -82,6 +85,7 @@ class AudioTrack {
       isFavorite: isFavorite ?? this.isFavorite,
       playCount: playCount ?? this.playCount,
       customArtPath: customArtPath ?? this.customArtPath,
+      lyrics: lyrics ?? this.lyrics,
     );
   }
 
@@ -106,6 +110,7 @@ class AudioTrack {
       'is_favorite': isFavorite ? 1 : 0,
       'play_count': playCount,
       'custom_art_path': customArtPath,
+      'lyrics': lyrics,
     };
   }
 
@@ -136,6 +141,7 @@ class AudioTrack {
       isFavorite: (map['is_favorite'] as int? ?? 0) == 1,
       playCount: map['play_count'] as int? ?? 0,
       customArtPath: map['custom_art_path'] as String?,
+      lyrics: map['lyrics'] as String?,
     );
   }
 }

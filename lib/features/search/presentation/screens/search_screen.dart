@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -113,7 +113,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
-                                  '${track.artist} • ${track.album}',
+                                  '${track.artist} â€¢ ${track.album}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTypography.bodySmall,

@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,7 +76,7 @@ const defaultSampleSongs = <Song>[
     1,
   ),
   Song(
-    'Tití Me Preguntó',
+    'TitÃ­ Me PreguntÃ³',
     'Bad Bunny',
     'Un Verano Sin Ti',
     Color(0xFFD9582B),
@@ -86,7 +86,7 @@ const defaultSampleSongs = <Song>[
   Song(
     'Taste',
     'Sabrina Carpenter',
-    'Short n’ Sweet',
+    'Short nâ€™ Sweet',
     Color(0xFF2D4FB0),
     Colors.white,
     3,
@@ -100,9 +100,9 @@ const defaultSampleSongs = <Song>[
     4,
   ),
   Song(
-    'Wildest Dreams (Taylor’s Version)',
+    'Wildest Dreams (Taylorâ€™s Version)',
     'Taylor Swift',
-    '1989 (Taylor’s Version)',
+    '1989 (Taylorâ€™s Version)',
     Color(0xFF7C97B4),
     Colors.white,
     5,
@@ -151,7 +151,7 @@ class RealisticCassetteOpeningModal extends StatelessWidget {
   }
 }
 
-// ───────────────────────── Cassette page ─────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Cassette page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class CassettePage extends ConsumerStatefulWidget {
   final Song song;
@@ -785,7 +785,7 @@ class _CoverBack extends StatelessWidget {
   }
 }
 
-// ───────────────────────── Clear cassette painter ─────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Clear cassette painter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class CassettePainter extends CustomPainter {
   final Song song;
@@ -818,7 +818,7 @@ class CassettePainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-      ellipsis: '…',
+      ellipsis: 'â€¦',
     )..layout(maxWidth: maxW);
     c.save();
     c.translate(o.dx, o.dy);
@@ -1021,7 +1021,7 @@ class CassettePainter extends CustomPainter {
     _text(c, 'RMA. POS/PE I NORMAL POSITION', const Offset(71, 24), size: 6.2);
     _text(
       c,
-      'BIAS 120 µs RMAL BIAS 120 µs EQ',
+      'BIAS 120 Âµs RMAL BIAS 120 Âµs EQ',
       const Offset(64, 24),
       size: 6.2,
     );
@@ -1093,7 +1093,7 @@ class CassettePainter extends CustomPainter {
     );
     _text(
       c,
-      'NR [ ]  ▢IN ▢OUT',
+      'NR [ ]  â–¢IN â–¢OUT',
       const Offset(172, 288),
       size: 5.5,
       color: const Color(0xFF222222),

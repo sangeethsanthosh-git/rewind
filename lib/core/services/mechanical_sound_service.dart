@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:spool/features/settings/domain/app_settings.dart';
 

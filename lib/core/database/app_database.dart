@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../features/audio_player/domain/audio_track.dart';
@@ -33,7 +33,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -43,6 +43,11 @@ class AppDatabase {
     if (oldVersion < 2) {
       try {
         await db.execute('ALTER TABLE songs ADD COLUMN custom_art_path TEXT;');
+      } catch (_) {}
+    }
+    if (oldVersion < 3) {
+      try {
+        await db.execute('ALTER TABLE songs ADD COLUMN lyrics TEXT;');
       } catch (_) {}
     }
     await db.execute('''
@@ -74,7 +79,8 @@ class AppDatabase {
         genre TEXT,
         is_favorite INTEGER NOT NULL DEFAULT 0,
         play_count INTEGER NOT NULL DEFAULT 0,
-        custom_art_path TEXT
+        custom_art_path TEXT,
+        lyrics TEXT
       )
     ''');
 
@@ -123,7 +129,7 @@ class AppDatabase {
   // --- Song Operations ---
   Future<void> upsertSongs(List<AudioTrack> tracks) async {
     final db = await database;
-    final existing = await db.query('songs', columns: ['id', 'is_favorite', 'play_count', 'custom_art_path']);
+    final existing = await db.query('songs', columns: ['id', 'is_favorite', 'play_count', 'custom_art_path', 'lyrics']);
     final existingMap = {for (var row in existing) row['id'] as String: row};
 
     final batch = db.batch();
@@ -134,6 +140,7 @@ class AppDatabase {
               isFavorite: (old['is_favorite'] as int? ?? 0) == 1,
               playCount: old['play_count'] as int? ?? track.playCount,
               customArtPath: old['custom_art_path'] as String? ?? track.customArtPath,
+              lyrics: track.lyrics ?? old['lyrics'] as String?,
             )
           : track;
       batch.insert(

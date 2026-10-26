@@ -256,23 +256,25 @@ class _CassetteTapeWidgetState extends State<CassetteTapeWidget>
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 6),
-                                // Format / Dolby badge
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withAlpha(120),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: Text(
-                                    'DOLBY B-C NR • ${widget.track?.fileExtension.toUpperCase() ?? "K7"}',
-                                    style: AppTypography.monoSmall.copyWith(
-                                      color: Colors.white70,
-                                      fontSize: 7.5,
-                                      fontWeight: FontWeight.bold,
+                                if (w >= 280) ...[
+                                  const SizedBox(width: 6),
+                                  // Format / Dolby badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withAlpha(120),
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                    child: Text(
+                                      'DOLBY B-C NR • ${widget.track?.fileExtension.toUpperCase() ?? "K7"}',
+                                      style: AppTypography.monoSmall.copyWith(
+                                        color: Colors.white70,
+                                        fontSize: 7.5,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                           ),
@@ -486,7 +488,7 @@ class _CassetteTapeWidgetState extends State<CassetteTapeWidget>
                       ),
                       // Center counter readout
                       Text(
-                        '100 • 50 • 0',
+                        '100 \u2022 50 \u2022 0',
                         style: AppTypography.monoSmall.copyWith(
                           fontSize: 7.5,
                           fontWeight: FontWeight.bold,

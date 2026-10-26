@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -109,7 +109,7 @@ class CodecDiagnosticsScreen extends ConsumerWidget {
                           style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold, fontSize: 13),
                         ),
                         Text(
-                          '${codec['category']} • ${codec['status']}',
+                          '${codec['category']} â€¢ ${codec['status']}',
                           style: AppTypography.bodySmall.copyWith(fontSize: 11),
                         ),
                       ],

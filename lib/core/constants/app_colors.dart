@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../features/settings/domain/app_settings.dart';
 
 class ThemePalette {

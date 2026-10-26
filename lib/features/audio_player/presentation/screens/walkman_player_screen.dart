@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -625,7 +626,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     final double rightRadius = 12.0 + (10.0 * progress);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1013),
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
@@ -1393,127 +1394,156 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
           _buildScrew(left: 6, bottom: 6),
           _buildScrew(right: 6, bottom: 6),
 
-          // Cassette Face Label with Album Artwork Image!
+          // Cassette Face Label with Full-Bleed Album Artwork Banner!
           Positioned(
             left: 10,
             right: 10,
             top: 8,
             height: 106,
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF24262E),
-                borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: Colors.white12),
-              ),
-              child: Stack(
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  // Album Artwork Image sticker on left
-                  Positioned(
-                    left: 5,
-                    top: 5,
-                    width: 48,
-                    height: 48,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF24262E),
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: Colors.white24, width: 0.8),
+                ),
+                child: Stack(
+                  clipBehavior: Clip.hardEdge,
+                  children: [
+                    // 1. Full-Bleed Album Artwork Image / Banner
+                    Positioned.fill(
                       child: track != null
-                          ? ArtworkWidget(
-                              id: track.albumId ?? int.tryParse(track.id),
-                              customArtPath: track.customArtPath,
-                              title: track.title,
-                              artist: track.artist,
-                              size: 48,
-                              borderRadius: 4,
-                            )
+                          ? (track.customArtPath != null && File(track.customArtPath!).existsSync()
+                              ? Image.file(
+                                  File(track.customArtPath!),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                )
+                              : ArtworkWidget(
+                                  id: track.albumId ?? int.tryParse(track.id),
+                                  customArtPath: track.customArtPath,
+                                  title: track.title,
+                                  artist: track.artist,
+                                  size: 220,
+                                  borderRadius: 5,
+                                ))
                           : Container(
-                              color: const Color(0xFFE9822C),
-                              child: const Icon(Icons.music_note, color: Colors.white, size: 24),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF2C3E50), Color(0xFF3498DB)],
+                                ),
+                              ),
+                              child: const Icon(Icons.music_note, color: Colors.white24, size: 48),
                             ),
                     ),
-                  ),
 
-                  // Track Title & Artist typography
-                  Positioned(
-                    left: 60,
-                    right: 6,
-                    top: 6,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                    // 2. Vintage Tape Sticker Gradient Overlay for Contrast & Readability
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withAlpha(180),
+                              Colors.black.withAlpha(30),
+                              Colors.black.withAlpha(190),
+                            ],
+                            stops: const [0.0, 0.45, 1.0],
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          artist,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withAlpha(180),
+                      ),
+                    ),
+
+                    // 3. Track Title & Artist across top header
+                    Positioned(
+                      left: 8,
+                      right: 8,
+                      top: 6,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withAlpha(190),
+                              borderRadius: BorderRadius.circular(2),
+                              border: Border.all(color: Colors.white38, width: 0.8),
+                            ),
+                            child: const Text(
+                              'SIDE A',
+                              style: TextStyle(
+                                fontSize: 7.5,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1)),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  artist,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withAlpha(220),
+                                    shadows: const [
+                                      Shadow(color: Colors.black, blurRadius: 4, offset: Offset(0, 1)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withAlpha(140),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: const Text(
+                              'REWIND C-90',
+                              style: TextStyle(
+                                fontSize: 7,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
 
-                  // Retro Badges: "SIDE A", "REWIND Hi-Fi"
-                  Positioned(
-                    left: 6,
-                    bottom: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(220),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: const Text(
-                        'SIDE A',
-                        style: TextStyle(
-                          fontSize: 7,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF14151A),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 6,
-                    bottom: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(120),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: const Text(
-                        'REWIND Hi-Fi 90min',
-                        style: TextStyle(
-                          fontSize: 7,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Center Clear Pill Inspection Cutout (Spools + Rotating Hubs)
-                  Positioned(
-                    left: 45,
-                    top: 54,
-                    width: 150,
-                    height: 46,
+                    // 4. Center Clear Pill Inspection Cutout (Spools + Rotating Hubs)
+                    Positioned(
+                      left: 35,
+                      top: 48,
+                      width: 150,
+                      height: 46,
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF14151A),
@@ -1578,6 +1608,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
               ),
             ),
           ),
+        ),
 
           // Bottom Trapezoid Head Cavity Foot
           Positioned(
@@ -1815,31 +1846,40 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
   }) {
     String statusMsg = '';
     String actionLabel = '';
+    IconData actionIcon = Icons.arrow_forward;
 
     switch (_step) {
       case 0:
-        statusMsg = 'The lid is closed. Tap to open and reveal the cassette case.';
-        actionLabel = 'Open the Walkman';
+        statusMsg = 'Chassis lid closed. Tap to open.';
+        actionLabel = 'OPEN LID';
+        actionIcon = Icons.lock_open_rounded;
         break;
       case 1:
-        statusMsg = 'The lid is open. Insert the cassette from the case into the Walkman bay.';
-        actionLabel = 'Insert the cassette';
+        statusMsg = 'Lid open. Insert cassette into player.';
+        actionLabel = 'INSERT TAPE';
+        actionIcon = Icons.vertical_align_bottom_rounded;
         break;
       case 2:
-        statusMsg = 'Tape loaded. Close the lid to play.';
-        actionLabel = 'Close the lid';
+        statusMsg = 'Cassette loaded. Close lid to listen.';
+        actionLabel = 'CLOSE LID';
+        actionIcon = Icons.lock_outline_rounded;
         break;
       case 3:
       default:
         if (playbackState.isPlaying) {
-          statusMsg = 'Now playing: ${trackTitle ?? "Side A"}.';
-          actionLabel = 'Stop';
+          statusMsg = trackTitle != null ? 'Playing: $trackTitle' : 'Playing';
+          actionLabel = 'PAUSE';
+          actionIcon = Icons.pause_rounded;
         } else {
-          statusMsg = 'Ready to play.';
-          actionLabel = 'Press play';
+          statusMsg = 'Ready to play';
+          actionLabel = 'PLAY';
+          actionIcon = Icons.play_arrow_rounded;
         }
         break;
     }
+
+    final isLightAccent = ThemeData.estimateBrightnessForColor(settings.accentColor) == Brightness.light;
+    final buttonFg = isLightAccent ? const Color(0xFF101115) : Colors.white;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -1897,25 +1937,31 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
                 ),
-                child: const Text('Back', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: const Text('BACK', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
               ),
               const SizedBox(width: 12),
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: onGoNext,
+                icon: Icon(actionIcon, size: 18, color: buttonFg),
+                label: Text(
+                  actionLabel,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    letterSpacing: 0.8,
+                    color: buttonFg,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: settings.accentColor,
-                  foregroundColor: Colors.white,
+                  foregroundColor: buttonFg,
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-                ),
-                child: Text(
-                  actionLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
                 ),
               ),
             ],
