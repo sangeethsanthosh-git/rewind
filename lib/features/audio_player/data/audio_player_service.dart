@@ -11,7 +11,10 @@ class AudioPlayerService {
   final _stateController = StreamController<SpoolPlaybackState>.broadcast();
 
   SpoolPlaybackState _state = const SpoolPlaybackState();
-  ConcatenatingAudioSource? _playlistSource;
+  bool _hasPlaylist = false;
+  int _loadGeneration = 0;
+  bool _disposed = false;
+  final List<StreamSubscription<dynamic>> _subscriptions = [];
 
   Stream<SpoolPlaybackState> get stateStream => _stateController.stream;
   SpoolPlaybackState get currentState => _state;
@@ -26,75 +29,97 @@ class AudioPlayerService {
     try {
       final session = await AudioSession.instance;
       await session.configure(const AudioSessionConfiguration.music());
+      if (_disposed) return;
 
-      session.becomingNoisyEventStream.listen((_) {
-        pause();
-      });
+      _subscriptions.add(
+        session.becomingNoisyEventStream.listen((_) {
+          pause();
+        }),
+      );
 
-      session.interruptionEventStream.listen((event) {
-        if (event.begin) {
-          switch (event.type) {
-            case AudioInterruptionType.duck:
-              _player.setVolume(0.4);
-              break;
-            case AudioInterruptionType.pause:
-            case AudioInterruptionType.unknown:
-              pause();
-              break;
+      _subscriptions.add(
+        session.interruptionEventStream.listen((event) {
+          if (event.begin) {
+            switch (event.type) {
+              case AudioInterruptionType.duck:
+                _player.setVolume(0.4);
+                break;
+              case AudioInterruptionType.pause:
+              case AudioInterruptionType.unknown:
+                pause();
+                break;
+            }
+          } else {
+            switch (event.type) {
+              case AudioInterruptionType.duck:
+                _player.setVolume(1.0);
+                break;
+              case AudioInterruptionType.pause:
+                resume();
+                break;
+              case AudioInterruptionType.unknown:
+                break;
+            }
           }
-        } else {
-          switch (event.type) {
-            case AudioInterruptionType.duck:
-              _player.setVolume(1.0);
-              break;
-            case AudioInterruptionType.pause:
-              resume();
-              break;
-            case AudioInterruptionType.unknown:
-              break;
-          }
-        }
-      });
+        }),
+      );
     } catch (_) {}
   }
 
   void _listenPlayerEvents() {
-    _player.playerStateStream.listen((playerState) {
-      final isPlaying = playerState.playing;
-      final isBuffering = playerState.processingState == ProcessingState.buffering ||
-          playerState.processingState == ProcessingState.loading;
+    _subscriptions.add(
+      _player.playerStateStream.listen((playerState) {
+        final isPlaying = playerState.playing;
+        final isBuffering =
+            playerState.processingState == ProcessingState.buffering ||
+            playerState.processingState == ProcessingState.loading;
 
-      _updateState(_state.copyWith(
-        isPlaying: isPlaying,
-        isBuffering: isBuffering,
-      ));
-    });
+        _updateState(
+          _state.copyWith(
+            isPlaying:
+                isPlaying &&
+                playerState.processingState != ProcessingState.completed,
+            isBuffering: isBuffering,
+          ),
+        );
+      }),
+    );
 
-    _player.positionStream.listen((position) {
-      _updateState(_state.copyWith(position: position));
-    });
+    _subscriptions.add(
+      _player.positionStream.listen((position) {
+        _updateState(_state.copyWith(position: position));
+      }),
+    );
 
-    _player.durationStream.listen((duration) {
-      if (duration != null) {
-        _updateState(_state.copyWith(duration: duration));
-      }
-    });
+    _subscriptions.add(
+      _player.durationStream.listen((duration) {
+        if (duration != null) {
+          _updateState(_state.copyWith(duration: duration));
+        }
+      }),
+    );
 
-    _player.bufferedPositionStream.listen((buffered) {
-      _updateState(_state.copyWith(bufferedPosition: buffered));
-    });
+    _subscriptions.add(
+      _player.bufferedPositionStream.listen((buffered) {
+        _updateState(_state.copyWith(bufferedPosition: buffered));
+      }),
+    );
 
-    _player.currentIndexStream.listen((index) {
-      if (index != null && index >= 0 && index < _state.queue.length) {
-        final track = _state.queue[index];
-        _updateState(_state.copyWith(
-          currentIndex: index,
-          currentTrack: track,
-          clearError: true,
-        ));
-        AppDatabase.instance.recordPlay(track.id);
-      }
-    });
+    _subscriptions.add(
+      _player.currentIndexStream.listen((index) {
+        if (index != null && index >= 0 && index < _state.queue.length) {
+          final track = _state.queue[index];
+          _updateState(
+            _state.copyWith(
+              currentIndex: index,
+              currentTrack: track,
+              clearError: true,
+            ),
+          );
+          AppDatabase.instance.recordPlay(track.id);
+        }
+      }),
+    );
   }
 
   Uri? _getArtworkUri(AudioTrack track) {
@@ -102,15 +127,26 @@ class AudioPlayerService {
       return Uri.file(track.customArtPath!);
     }
     if (track.albumId != null) {
-      return Uri.parse('content://media/external/audio/albumart/${track.albumId}');
+      return Uri.parse(
+        'content://media/external/audio/albumart/${track.albumId}',
+      );
     }
     return null;
   }
 
   AudioSource _createAudioSource(AudioTrack track) {
-    final uri = track.uri.startsWith('content://') || track.uri.startsWith('http')
-        ? Uri.parse(track.uri)
-        : Uri.file(track.path);
+    final source = track.uri.trim();
+    final parsed = Uri.tryParse(source);
+    final uri =
+        parsed != null &&
+            const ['content', 'http', 'https', 'file'].contains(parsed.scheme)
+        ? parsed
+        : Uri.file(track.path.isNotEmpty ? track.path : source);
+    if (source.isEmpty && track.path.isEmpty) {
+      throw StateError(
+        'No audio file is attached to this song. Scan your music library.',
+      );
+    }
 
     return AudioSource.uri(
       uri,
@@ -120,48 +156,90 @@ class AudioPlayerService {
         title: track.title,
         artist: track.artist,
         artUri: _getArtworkUri(track),
-        duration: track.durationMs > 0 ? Duration(milliseconds: track.durationMs) : null,
+        duration: track.durationMs > 0
+            ? Duration(milliseconds: track.durationMs)
+            : null,
       ),
     );
   }
 
   Future<void> playTrack(AudioTrack track, {List<AudioTrack>? queue}) async {
+    final generation = ++_loadGeneration;
     try {
-      final newQueue = queue ?? [track];
+      final newQueue = List<AudioTrack>.of(queue ?? [track]);
+      if (!newQueue.any((item) => item.id == track.id)) {
+        newQueue.insert(0, track);
+      }
       final targetIndex = newQueue.indexWhere((t) => t.id == track.id);
       final initialIndex = targetIndex >= 0 ? targetIndex : 0;
 
       final audioSources = newQueue.map((t) => _createAudioSource(t)).toList();
-      _playlistSource = ConcatenatingAudioSource(
-        useLazyPreparation: true,
-        shuffleOrder: DefaultShuffleOrder(),
-        children: audioSources,
+
+      _updateState(
+        _state.copyWith(
+          isPlaying: false,
+          isBuffering: true,
+          position: Duration.zero,
+          duration: Duration(milliseconds: track.durationMs),
+          bufferedPosition: Duration.zero,
+          queue: List.unmodifiable(newQueue),
+          currentIndex: initialIndex,
+          currentTrack: newQueue[initialIndex],
+          clearError: true,
+        ),
       );
 
-      _updateState(_state.copyWith(
-        queue: newQueue,
-        currentIndex: initialIndex,
-        currentTrack: newQueue[initialIndex],
-        clearError: true,
-      ));
-
-      await _player.setAudioSource(
-        _playlistSource!,
+      await _player.setAudioSources(
+        audioSources,
         initialIndex: initialIndex,
         initialPosition: Duration.zero,
       );
 
-      await _player.play();
+      if (generation != _loadGeneration || _disposed) return;
+      _hasPlaylist = true;
+      unawaited(_startPlayback(generation));
+    } on PlayerInterruptedException {
+      // A newer selection superseded this load. It is not a file error.
+      if (generation == _loadGeneration && !_disposed) {
+        _updateState(_state.copyWith(isBuffering: false));
+      }
     } on PlayerException catch (e) {
-      _updateState(_state.copyWith(
-        errorMessage: 'Playback failed (${e.message}). Codec or format may not be supported on this device.',
-        isPlaying: false,
-      ));
+      if (generation != _loadGeneration || _disposed) return;
+      _updateState(
+        _state.copyWith(
+          errorMessage:
+              'Playback failed (${e.message}). Codec or format may not be supported on this device.',
+          isPlaying: false,
+          isBuffering: false,
+        ),
+      );
     } catch (e) {
-      _updateState(_state.copyWith(
-        errorMessage: 'Unable to open file: $e',
-        isPlaying: false,
-      ));
+      if (generation != _loadGeneration || _disposed) return;
+      _updateState(
+        _state.copyWith(
+          errorMessage: 'Unable to open file: $e',
+          isPlaying: false,
+          isBuffering: false,
+        ),
+      );
+    }
+  }
+
+  Future<void> _startPlayback(int generation) async {
+    try {
+      await _player.play();
+    } on PlayerInterruptedException {
+      // Replaced by a new source.
+    } catch (error) {
+      if (generation == _loadGeneration && !_disposed) {
+        _updateState(
+          _state.copyWith(
+            isPlaying: false,
+            isBuffering: false,
+            errorMessage: 'Playback failed: $error',
+          ),
+        );
+      }
     }
   }
 
@@ -169,11 +247,9 @@ class AudioPlayerService {
     if (index < 0 || index >= _state.queue.length) return;
     try {
       await _player.seek(Duration.zero, index: index);
-      await _player.play();
+      unawaited(_startPlayback(_loadGeneration));
     } catch (e) {
-      _updateState(_state.copyWith(
-        errorMessage: 'Playback error: $e',
-      ));
+      _updateState(_state.copyWith(errorMessage: 'Playback error: $e'));
     }
   }
 
@@ -183,7 +259,15 @@ class AudioPlayerService {
 
   Future<void> resume() async {
     if (_state.currentTrack != null) {
-      await _player.play();
+      if (_state.errorMessage != null) {
+        await playTrack(_state.currentTrack!, queue: _state.queue);
+        return;
+      }
+      if (_player.processingState == ProcessingState.completed) {
+        await _player.seek(Duration.zero);
+      }
+      _updateState(_state.copyWith(clearError: true));
+      unawaited(_startPlayback(_loadGeneration));
     }
   }
 
@@ -245,8 +329,8 @@ class AudioPlayerService {
 
   Future<void> addToQueue(AudioTrack track) async {
     final updatedQueue = List<AudioTrack>.from(_state.queue)..add(track);
-    if (_playlistSource != null) {
-      await _playlistSource!.add(_createAudioSource(track));
+    if (_hasPlaylist) {
+      await _player.addAudioSource(_createAudioSource(track));
     }
     _updateState(_state.copyWith(queue: updatedQueue));
   }
@@ -256,13 +340,13 @@ class AudioPlayerService {
     final updatedQueue = List<AudioTrack>.from(_state.queue);
     if (insertIndex <= updatedQueue.length) {
       updatedQueue.insert(insertIndex, track);
-      if (_playlistSource != null) {
-        await _playlistSource!.insert(insertIndex, _createAudioSource(track));
+      if (_hasPlaylist) {
+        await _player.insertAudioSource(insertIndex, _createAudioSource(track));
       }
     } else {
       updatedQueue.add(track);
-      if (_playlistSource != null) {
-        await _playlistSource!.add(_createAudioSource(track));
+      if (_hasPlaylist) {
+        await _player.addAudioSource(_createAudioSource(track));
       }
     }
     _updateState(_state.copyWith(queue: updatedQueue));
@@ -271,8 +355,8 @@ class AudioPlayerService {
   Future<void> removeFromQueue(int index) async {
     if (index < 0 || index >= _state.queue.length) return;
     final updatedQueue = List<AudioTrack>.from(_state.queue)..removeAt(index);
-    if (_playlistSource != null) {
-      await _playlistSource!.removeAt(index);
+    if (_hasPlaylist) {
+      await _player.removeAudioSourceAt(index);
     }
     _updateState(_state.copyWith(queue: updatedQueue));
   }
@@ -283,11 +367,17 @@ class AudioPlayerService {
   }
 
   void _updateState(SpoolPlaybackState newState) {
+    if (_disposed) return;
     _state = newState;
     _stateController.add(newState);
   }
 
   void dispose() {
+    _disposed = true;
+    _loadGeneration++;
+    for (final subscription in _subscriptions) {
+      unawaited(subscription.cancel());
+    }
     _player.dispose();
     _stateController.close();
   }

@@ -18,14 +18,11 @@ class ResponsiveSongStack extends ConsumerStatefulWidget {
   final List<AudioTrack> tracks;
   final Function(AudioTrack track)? onTrackTap;
 
-  const ResponsiveSongStack({
-    super.key,
-    required this.tracks,
-    this.onTrackTap,
-  });
+  const ResponsiveSongStack({super.key, required this.tracks, this.onTrackTap});
 
   @override
-  ConsumerState<ResponsiveSongStack> createState() => _ResponsiveSongStackState();
+  ConsumerState<ResponsiveSongStack> createState() =>
+      _ResponsiveSongStackState();
 }
 
 class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
@@ -51,9 +48,14 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
   }
 
   void _snap() {
-    if (!_controller.hasClients) return;
-    final effectiveTracks = widget.tracks.isNotEmpty ? widget.tracks : _getSampleTracks();
-    final nearest = (_controller.offset / perSong).round().clamp(0, effectiveTracks.length - 1);
+    if (!mounted || !_controller.hasClients) return;
+    final effectiveTracks = widget.tracks.isNotEmpty
+        ? widget.tracks
+        : _getSampleTracks();
+    final nearest = (_controller.offset / perSong).round().clamp(
+      0,
+      effectiveTracks.length - 1,
+    );
     final goal = nearest * perSong;
 
     if ((_controller.offset - goal).abs() > 1) {
@@ -75,9 +77,14 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
   }
 
   void _scrollToIndex(int index) {
-    if (!_controller.hasClients) return;
-    final effectiveTracks = widget.tracks.isNotEmpty ? widget.tracks : _getSampleTracks();
-    final goal = (index * perSong).clamp(0.0, (effectiveTracks.length - 1) * perSong);
+    if (!mounted || !_controller.hasClients) return;
+    final effectiveTracks = widget.tracks.isNotEmpty
+        ? widget.tracks
+        : _getSampleTracks();
+    final goal = (index * perSong).clamp(
+      0.0,
+      (effectiveTracks.length - 1) * perSong,
+    );
     _controller.animateTo(
       goal,
       duration: const Duration(milliseconds: 320),
@@ -85,13 +92,25 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     );
   }
 
-  void _tap(double dy, double h, double gap, double eyeLevelY, List<AudioTrack> tracks) {
+  void _tap(
+    double dy,
+    double h,
+    double gap,
+    double eyeLevelY,
+    List<AudioTrack> tracks,
+  ) {
     final pos = _controller.hasClients ? _controller.offset / perSong : 0.0;
     int best = 0;
     double bestD = 1e9;
 
-    for (var i = 0; i < tracks.length; i++) {
-      final cardY = (i - pos) * gap + eyeLevelY;
+    for (
+      var i = math.max(0, (pos - 6).floor());
+      i <= math.min(tracks.length - 1, (pos + 6).ceil());
+      i++
+    ) {
+      final width = math.min(context.size!.width * 0.86, 540.0);
+      final projection = 1 / (1 - width * 0.74 / 2 / perspective);
+      final cardY = h / 2 + ((i - pos) * gap + eyeLevelY - h / 2) * projection;
       final d = (cardY - dy).abs();
       if (d < bestD) {
         bestD = d;
@@ -100,11 +119,19 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     }
 
     // Require tap to be within proximity of the card
-    if (bestD > gap * 0.9) return;
+    if (bestD > slabThickness * 1.2) return;
     _handleTrackTap(best, tracks[best], tracks);
   }
 
   void _handleTrackTap(int index, AudioTrack track, List<AudioTrack> tracks) {
+    if (track.uri.isEmpty && track.path.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Scan your music library to play your own tapes.'),
+        ),
+      );
+      return;
+    }
     _scrollToIndex(index);
     MechanicalSoundService.instance.playMechanicalSound(
       MechanicalSoundType.doorLatch,
@@ -115,26 +142,28 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     if (widget.onTrackTap != null) {
       widget.onTrackTap!(track);
     } else {
-      ref.read(playbackNotifierProvider.notifier).playTrack(
-        track,
-        queue: tracks,
-      );
+      ref
+          .read(playbackNotifierProvider.notifier)
+          .playTrack(track, queue: tracks);
       final song = Song.fromAudioTrack(track, index);
-      Navigator.of(context).push(PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 450),
-        reverseTransitionDuration: const Duration(milliseconds: 350),
-        pageBuilder: (context, anim, secAnim) => CassettePage(
-          song: song,
-          allTracks: tracks,
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 450),
+          reverseTransitionDuration: const Duration(milliseconds: 350),
+          pageBuilder: (context, anim, secAnim) =>
+              CassettePage(song: song, allTracks: tracks),
+          transitionsBuilder: (context, a, secAnim, child) =>
+              FadeTransition(opacity: a, child: child),
         ),
-        transitionsBuilder: (context, a, secAnim, child) => FadeTransition(opacity: a, child: child),
-      ));
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final effectiveTracks = widget.tracks.isNotEmpty ? widget.tracks : _getSampleTracks();
+    final effectiveTracks = widget.tracks.isNotEmpty
+        ? widget.tracks
+        : _getSampleTracks();
     final playbackState = ref.watch(playbackNotifierProvider);
     final hasActiveTrack = playbackState.currentTrack != null;
 
@@ -148,6 +177,11 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
 
         return Stack(
           children: [
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: _TapeShelfPainter()),
+              ),
+            ),
             // 3D Scene of floating cassette slabs
             Positioned.fill(
               child: IgnorePointer(
@@ -181,7 +215,13 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
             Positioned.fill(
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
-                onTapUp: (t) => _tap(t.localPosition.dy, box.maxHeight, gap, eyeLevelY, effectiveTracks),
+                onTapUp: (t) => _tap(
+                  t.localPosition.dy,
+                  box.maxHeight,
+                  gap,
+                  eyeLevelY,
+                  effectiveTracks,
+                ),
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
                     if (notification is ScrollEndNotification) {
@@ -191,10 +231,13 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
                   },
                   child: ListView(
                     controller: _controller,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const ClampingScrollPhysics(),
+                    padding: EdgeInsets.zero,
                     children: [
                       SizedBox(
-                        height: (effectiveTracks.length - 1) * perSong + box.maxHeight,
+                        height:
+                            (effectiveTracks.length - 1) * perSong +
+                            box.maxHeight,
                       ),
                     ],
                   ),
@@ -229,7 +272,9 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
   }) {
     final n = tracks.length;
     // Painter's algorithm: sort farthest from eye level first
-    final order = List<int>.generate(n, (i) => i)
+    final first = math.max(0, (pos - 6).floor());
+    final last = math.min(n - 1, (pos + 6).ceil());
+    final order = List<int>.generate(last - first + 1, (i) => first + i)
       ..sort((a, b) => (b - pos).abs().compareTo((a - pos).abs()));
 
     final out = <Widget>[];
@@ -242,58 +287,74 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
       final y = delta * gap;
       final opacity = a < 3.6 ? 1.0 : (1.0 - (a - 3.6) / 1.4).clamp(0.0, 1.0);
       final track = tracks[i];
-      final isPlaying = playbackState.currentTrack?.id == track.id && playbackState.isPlaying;
-      final spineColor = AppColors.spinePalette[i % AppColors.spinePalette.length];
+      final isPlaying =
+          playbackState.currentTrack?.id == track.id && playbackState.isPlaying;
+      final spineColor =
+          AppColors.spinePalette[i % AppColors.spinePalette.length];
 
       // Base 3D transformation matrix anchored at eyeLevelY
       Matrix4 base() => Matrix4.identity()
         ..setEntry(3, 2, -1 / perspective)
-        ..multiply(Matrix4.translationValues(0.0, y + (eyeLevelY - boxHeight / 2), 0.0));
+        ..multiply(
+          Matrix4.translationValues(0.0, y + (eyeLevelY - boxHeight / 2), 0.0),
+        );
 
       final faces = <Widget>[];
 
       // Top Art Face: visible when slab is below eye level
       if (y > slabThickness / 2) {
-        faces.add(_face(
-          base()
-            ..rotateX(math.pi / 2)
-            ..multiply(Matrix4.translationValues(0.0, 0.0, slabThickness / 2)),
-          w,
-          d,
-          _ArtFace(track: track, w: w, d: d),
-        ));
+        faces.add(
+          _face(
+            base()
+              ..rotateX(math.pi / 2)
+              ..multiply(
+                Matrix4.translationValues(0.0, 0.0, slabThickness / 2),
+              ),
+            w,
+            d,
+            _ArtFace(track: track, w: w, d: d),
+          ),
+        );
       }
       // Underside Face: visible when slab is above eye level
       else if (y < -slabThickness / 2) {
-        faces.add(_face(
-          base()
-            ..rotateX(-math.pi / 2)
-            ..multiply(Matrix4.translationValues(0.0, 0.0, slabThickness / 2)),
-          w,
-          d,
-          _ArtFace(track: track, w: w, d: d),
-        ));
+        faces.add(
+          _face(
+            base()
+              ..rotateX(-math.pi / 2)
+              ..multiply(
+                Matrix4.translationValues(0.0, 0.0, slabThickness / 2),
+              ),
+            w,
+            d,
+            _ArtFace(track: track, w: w, d: d),
+          ),
+        );
       }
 
       // Front Label Strip on the near edge facing the listener (always visible)
-      faces.add(_face(
-        base()..multiply(Matrix4.translationValues(0.0, 0.0, d / 2)),
-        w,
-        slabThickness,
-        _Strip(
-          track: track,
-          spineColor: spineColor,
-          isPlaying: isPlaying,
-          thickness: slabThickness,
+      faces.add(
+        _face(
+          base()..multiply(Matrix4.translationValues(0.0, 0.0, d / 2)),
+          w,
+          slabThickness,
+          _Strip(
+            track: track,
+            spineColor: spineColor,
+            isPlaying: isPlaying,
+            thickness: slabThickness,
+          ),
         ),
-      ));
+      );
 
-      out.add(Positioned.fill(
-        child: Opacity(
-          opacity: opacity,
-          child: Stack(fit: StackFit.expand, children: faces),
+      out.add(
+        Positioned.fill(
+          child: Opacity(
+            opacity: opacity,
+            child: Stack(fit: StackFit.expand, children: faces),
+          ),
         ),
-      ));
+      );
     }
 
     return out;
@@ -304,11 +365,7 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
       alignment: Alignment.center,
       transform: m,
       child: Center(
-        child: SizedBox(
-          width: w,
-          height: h,
-          child: child,
-        ),
+        child: SizedBox(width: w, height: h, child: child),
       ),
     );
   }
@@ -422,7 +479,11 @@ class _Strip extends StatelessWidget {
                 color: Colors.black.withAlpha(180),
                 borderRadius: BorderRadius.circular(3),
               ),
-              child: const Icon(Icons.graphic_eq_rounded, color: AppColors.neonOrange, size: 12),
+              child: const Icon(
+                Icons.graphic_eq_rounded,
+                color: AppColors.neonOrange,
+                size: 12,
+              ),
             ),
           ],
           Expanded(
@@ -482,11 +543,7 @@ class _ArtFace extends StatelessWidget {
   final double w;
   final double d;
 
-  const _ArtFace({
-    required this.track,
-    required this.w,
-    required this.d,
-  });
+  const _ArtFace({required this.track, required this.w, required this.d});
 
   @override
   Widget build(BuildContext context) {
@@ -495,9 +552,9 @@ class _ArtFace extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1B1B20),
+        color: const Color(0xFF282319),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white24, width: 1.2),
+        border: Border.all(color: const Color(0xFFBCA987), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(220),
@@ -527,7 +584,8 @@ class _ArtFace extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(8, 8, 48, 8),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: (track.customArtPath != null &&
+                      child:
+                          (track.customArtPath != null &&
                               track.customArtPath!.isNotEmpty &&
                               File(track.customArtPath!).existsSync())
                           ? Image.file(
@@ -537,14 +595,14 @@ class _ArtFace extends StatelessWidget {
                                   _buildPlaceholder(accent),
                             )
                           : (track.albumId != null
-                              ? ArtworkWidget(
-                                  id: track.albumId,
-                                  size: double.infinity,
-                                  borderRadius: 0,
-                                  title: track.title,
-                                  artist: track.artist,
-                                )
-                              : _buildPlaceholder(accent)),
+                                ? ArtworkWidget(
+                                    id: track.albumId,
+                                    size: double.infinity,
+                                    borderRadius: 0,
+                                    title: track.title,
+                                    artist: track.artist,
+                                  )
+                                : _buildPlaceholder(accent)),
                     ),
                   ),
 
@@ -616,16 +674,8 @@ class _ArtFace extends StatelessWidget {
             ),
 
             // Acrylic Hinge Knuckles on the right edge
-            Positioned(
-              right: 6,
-              top: 12,
-              child: _AcrylicHingeBump(),
-            ),
-            Positioned(
-              right: 6,
-              bottom: 12,
-              child: _AcrylicHingeBump(),
-            ),
+            Positioned(right: 6, top: 12, child: _AcrylicHingeBump()),
+            Positioned(right: 6, bottom: 12, child: _AcrylicHingeBump()),
           ],
         ),
       ),
@@ -659,7 +709,10 @@ class _ArtFace extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: AppTypography.monoSmall.copyWith(color: Colors.white70, fontSize: 9),
+              style: AppTypography.monoSmall.copyWith(
+                color: Colors.white70,
+                fontSize: 9,
+              ),
             ),
           ),
         ],
@@ -701,7 +754,7 @@ class _Hud extends StatelessWidget {
     if (tracks.isEmpty) return const SizedBox.shrink();
 
     // Dynamically position above Now Playing banner on home screen
-    final bottomPadding = hasActiveTrack ? 144.0 : 12.0;
+    final bottomPadding = hasActiveTrack ? 64.0 : 12.0;
 
     return Positioned(
       left: 16,
@@ -721,7 +774,10 @@ class _Hud extends StatelessWidget {
               const muted = Color(0xFF8A8A90);
 
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withAlpha(140),
                   borderRadius: BorderRadius.circular(20),
@@ -743,19 +799,21 @@ class _Hud extends StatelessWidget {
                     const SizedBox(width: 10),
                     Flexible(
                       child: Text.rich(
-                        TextSpan(children: [
-                          TextSpan(
-                            text: '${track.title} ',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '${track.title} ',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text: '• ${track.artist}',
-                            style: const TextStyle(color: muted),
-                          ),
-                        ]),
+                            TextSpan(
+                              text: '• ${track.artist}',
+                              style: const TextStyle(color: muted),
+                            ),
+                          ],
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 12),
@@ -808,10 +866,7 @@ class _Title extends StatelessWidget {
             final opacity = (1.0 - (pos * 0.85)).clamp(0.0, 1.0);
             return Transform.translate(
               offset: Offset(0, -pos * gap),
-              child: Opacity(
-                opacity: opacity,
-                child: child,
-              ),
+              child: Opacity(opacity: opacity, child: child),
             );
           },
           child: Column(
@@ -825,7 +880,10 @@ class _Title extends StatelessWidget {
                   'REWIND',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: math.min(MediaQuery.of(context).size.width * 0.12, 54),
+                    fontSize: math.min(
+                      MediaQuery.of(context).size.width * 0.12,
+                      54,
+                    ),
                     fontWeight: FontWeight.w800,
                     letterSpacing: 10,
                   ),
@@ -835,7 +893,7 @@ class _Title extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  'Listen to your music. Enjoy every moment.',
+                  'YOUR MUSIC. PRESERVED ON TAPE.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFF8A8A90),
@@ -851,4 +909,31 @@ class _Title extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TapeShelfPainter extends CustomPainter {
+  const _TapeShelfPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(0, -0.3),
+          radius: 1,
+          colors: [Color(0xFF30281C), Color(0xFF100F0C)],
+        ).createShader(rect),
+    );
+    final grain = Paint()
+      ..color = const Color(0x0CBFA780)
+      ..strokeWidth = 0.5;
+    for (double y = 0; y < size.height; y += 4) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), grain);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TapeShelfPainter oldDelegate) => false;
 }

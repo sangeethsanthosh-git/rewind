@@ -57,12 +57,12 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
             children: screens,
           ),
 
-          // Floating Retro Now Playing Banner (Visible ONLY on Home Page!)
+          // Floating Retro Now Playing Banner (Visible ONLY on Home Page, positioned snug above navigation bar)
           if (hasActiveTrack && _currentIndex == 0)
             Positioned(
-              left: 12,
-              right: 12,
-              bottom: 64, // Positioned right above bottom navigation bar
+              left: 8,
+              right: 8,
+              bottom: 4, // Positioned right near the bottom navigation bar
               child: _buildHomeNowPlayingBanner(playbackState, themePalette),
             ),
         ],
@@ -227,14 +227,14 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: themePalette.surfaceElevated,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: themePalette.borderSubtle, width: 1.4),
+          color: themePalette.surfaceElevated.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: themePalette.borderSubtle, width: 1.0),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(220),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: Colors.black.withAlpha(180),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -242,29 +242,29 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               child: Row(
                 children: [
-                  // Full Banner Artwork Image with "+ BANNER" Picker Button
+                  // Compact Banner Artwork Image with "+ BANNER" Picker Button
                   Stack(
                     alignment: Alignment.bottomRight,
                     children: [
                       Container(
-                        width: 64,
-                        height: 64,
+                        width: 42,
+                        height: 42,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.neonOrange.withAlpha(120), width: 1.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.neonOrange.withAlpha(120), width: 1.0),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withAlpha(140),
-                              blurRadius: 8,
+                              blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius: BorderRadius.circular(7),
                           child: (track.customArtPath != null &&
                                   track.customArtPath!.isNotEmpty &&
                                   File(track.customArtPath!).existsSync())
@@ -276,8 +276,8 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                                   id: int.tryParse(track.id),
                                   albumId: track.albumId,
                                   customArtPath: track.customArtPath,
-                                  size: 64,
-                                  borderRadius: 9,
+                                  size: 42,
+                                  borderRadius: 7,
                                   title: track.title,
                                   artist: track.artist,
                                 ),
@@ -294,17 +294,17 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                               track: track,
                             );
                           },
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                           child: Container(
-                            padding: const EdgeInsets.all(3.5),
+                            padding: const EdgeInsets.all(2.5),
                             decoration: BoxDecoration(
                               color: Colors.black.withAlpha(220),
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.neonOrange, width: 1.0),
+                              border: Border.all(color: AppColors.neonOrange, width: 0.8),
                             ),
                             child: const Icon(
                               Icons.add_photo_alternate_rounded,
-                              size: 13,
+                              size: 10,
                               color: AppColors.neonOrange,
                             ),
                           ),
@@ -312,70 +312,52 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(width: 12),
-                  // Title, Artist, Status and Timing
+                  const SizedBox(width: 10),
+                  // Compact 2-Line Track Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.tapeGreen,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'NOW PLAYING • ${track.fileExtension.toUpperCase()}',
-                              style: AppTypography.monoSmall.copyWith(
-                                color: AppColors.tapeAmber,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
                         Text(
                           track.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.5,
                             color: Colors.white,
                           ),
                         ),
-                        Text(
-                          track.artist,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 2),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              Formatters.formatDuration(position),
-                              style: AppTypography.monoSmall.copyWith(
-                                color: AppColors.textMuted,
-                                fontSize: 9,
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.tapeGreen,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                '${track.artist} • ${track.fileExtension.toUpperCase()}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 10.5,
+                                ),
                               ),
                             ),
                             Text(
-                              Formatters.formatDuration(duration),
+                              Formatters.formatDuration(position),
                               style: AppTypography.monoSmall.copyWith(
-                                color: AppColors.textMuted,
-                                fontSize: 9,
+                                color: AppColors.tapeAmber,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
@@ -383,13 +365,14 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 6),
                   // Transport Buttons (Prev, Play/Pause, Next)
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        iconSize: 22,
-                        padding: const EdgeInsets.all(4),
+                        iconSize: 20,
+                        padding: const EdgeInsets.all(3),
                         constraints: const BoxConstraints(),
                         icon: const Icon(Icons.skip_previous_rounded, color: AppColors.textPrimary),
                         onPressed: () {
@@ -401,10 +384,10 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                           ref.read(playbackNotifierProvider.notifier).skipToPrevious();
                         },
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                       IconButton(
-                        iconSize: 32,
-                        padding: const EdgeInsets.all(4),
+                        iconSize: 28,
+                        padding: const EdgeInsets.all(3),
                         constraints: const BoxConstraints(),
                         icon: Icon(
                           isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
@@ -419,10 +402,10 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                           ref.read(playbackNotifierProvider.notifier).togglePlayPause();
                         },
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                       IconButton(
-                        iconSize: 22,
-                        padding: const EdgeInsets.all(4),
+                        iconSize: 20,
+                        padding: const EdgeInsets.all(3),
                         constraints: const BoxConstraints(),
                         icon: const Icon(Icons.skip_next_rounded, color: AppColors.textPrimary),
                         onPressed: () {
@@ -441,10 +424,10 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
             ),
             // Progress Bar on bottom of banner card
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(11)),
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: 2.8,
+                minHeight: 2.0,
                 backgroundColor: Colors.white10,
                 valueColor: const AlwaysStoppedAnimation<Color>(AppColors.neonOrange),
               ),

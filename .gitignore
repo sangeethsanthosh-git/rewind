@@ -32,6 +32,7 @@ android/build/
 
 # Symbolication related
 app.*.symbols
+.vscode/
 
 # Obfuscation related
 app.*.map.json

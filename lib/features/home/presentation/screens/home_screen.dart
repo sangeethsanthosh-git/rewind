@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
-import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
-import 'package:spool/core/widgets/retro_walkman_widget.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
-import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
 import 'package:spool/features/home/presentation/widgets/responsive_song_stack.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
-import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   final Function(int targetTabIndex)? onNavigateToTab;
@@ -21,12 +17,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  bool _showWalkmanDeck = false;
-
   @override
   Widget build(BuildContext context) {
     final libraryState = ref.watch(libraryNotifierProvider);
-    final settings = ref.watch(settingsNotifierProvider);
     final allSongs = libraryState.allSongs;
 
     return Scaffold(
@@ -34,78 +27,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Minimal Header: App Name REWIND wording image on the left, Cassette Walkman mode on the right
+            // Minimal Header: App Name REWIND on the left
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'REWIND',
-                    style: AppTypography.displayLarge.copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 4.0,
-                      color: Colors.white,
-                    ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'REWIND',
+                  style: AppTypography.displayLarge.copyWith(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 4.0,
+                    color: Colors.white,
                   ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: _showWalkmanDeck
-                          ? BoxDecoration(
-                              color: settings.accentColor.withValues(alpha: 0.22),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: settings.accentColor, width: 1.2),
-                            )
-                          : null,
-                      child: Icon(Icons.radio_outlined, color: settings.accentColor, size: 24),
-                    ),
-                    tooltip: _showWalkmanDeck ? 'Hide Walkman Deck' : 'Walkman Deck Mode',
-                    onPressed: () {
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.doorLatch,
-                        settings: settings,
-                      );
-                      setState(() {
-                        _showWalkmanDeck = !_showWalkmanDeck;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // Collapsible Retro Walkman Deck Widget directly on Home Screen
-            if (_showWalkmanDeck)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    RetroWalkmanWidget(
-                      onOpenNowPlaying: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const NowPlayingScreen()),
-                        );
-                      },
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textMuted),
-                        tooltip: 'Close Deck',
-                        onPressed: () {
-                          setState(() => _showWalkmanDeck = false);
-                        },
-                      ),
-                    ),
-                  ],
                 ),
               ),
+            ),
 
             // Scanning progress indicator banner
             if (libraryState.scanProgress?.isScanning == true)

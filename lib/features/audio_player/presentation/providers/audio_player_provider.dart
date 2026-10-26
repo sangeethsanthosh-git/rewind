@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/audio_player_service.dart';
 import '../../domain/playback_state.dart';
@@ -17,11 +18,18 @@ final playbackStateStreamProvider = StreamProvider<SpoolPlaybackState>((ref) {
 
 class PlaybackNotifier extends StateNotifier<SpoolPlaybackState> {
   final AudioPlayerService _service;
+  late final StreamSubscription<SpoolPlaybackState> _subscription;
 
   PlaybackNotifier(this._service) : super(_service.currentState) {
-    _service.stateStream.listen((state) {
+    _subscription = _service.stateStream.listen((state) {
       this.state = state;
     });
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 
   Future<void> playTrack(AudioTrack track, {List<AudioTrack>? queue}) =>
@@ -74,6 +82,6 @@ class PlaybackNotifier extends StateNotifier<SpoolPlaybackState> {
 
 final playbackNotifierProvider =
     StateNotifierProvider<PlaybackNotifier, SpoolPlaybackState>((ref) {
-  final service = ref.watch(audioPlayerServiceProvider);
-  return PlaybackNotifier(service);
-});
+      final service = ref.watch(audioPlayerServiceProvider);
+      return PlaybackNotifier(service);
+    });
