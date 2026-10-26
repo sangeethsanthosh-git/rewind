@@ -1,10 +1,9 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
-import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/core/utils/banner_picker_helper.dart';
 import 'package:spool/core/utils/formatters.dart';
 import 'package:spool/core/widgets/artwork_widget.dart';
@@ -382,11 +381,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                         constraints: const BoxConstraints(),
                         icon: const Icon(Icons.skip_previous_rounded, color: AppColors.textPrimary),
                         onPressed: () {
-                          final settings = ref.read(settingsNotifierProvider);
-                          MechanicalSoundService.instance.playMechanicalSound(
-                            MechanicalSoundType.skipClick,
-                            settings: settings,
-                          );
                           ref.read(playbackNotifierProvider.notifier).skipToPrevious();
                         },
                       ),
@@ -400,11 +394,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                           color: accentColor,
                         ),
                         onPressed: () {
-                          final settings = ref.read(settingsNotifierProvider);
-                          MechanicalSoundService.instance.playMechanicalSound(
-                            isPlaying ? MechanicalSoundType.pauseClick : MechanicalSoundType.playClack,
-                            settings: settings,
-                          );
                           ref.read(playbackNotifierProvider.notifier).togglePlayPause();
                         },
                       ),
@@ -415,11 +404,6 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                         constraints: const BoxConstraints(),
                         icon: const Icon(Icons.skip_next_rounded, color: AppColors.textPrimary),
                         onPressed: () {
-                          final settings = ref.read(settingsNotifierProvider);
-                          MechanicalSoundService.instance.playMechanicalSound(
-                            MechanicalSoundType.skipClick,
-                            settings: settings,
-                          );
                           ref.read(playbackNotifierProvider.notifier).skipToNext();
                         },
                       ),

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/services/mechanical_sound_service.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/artwork_widget.dart';
 import '../../../../core/widgets/europe_deluxe_disc.dart';
@@ -72,10 +71,6 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
             ),
             tooltip: _isDiscView ? 'Switch to VHS Spine List' : 'Switch to View-Master Disc',
             onPressed: () {
-              MechanicalSoundService.instance.playMechanicalSound(
-                MechanicalSoundType.skipClick,
-                settings: settings,
-              );
               setState(() => _isDiscView = !_isDiscView);
             },
           ),
@@ -254,10 +249,6 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
                         ),
                         onPressed: () {
                           if (folder.tracks.isNotEmpty) {
-                            MechanicalSoundService.instance.playMechanicalSound(
-                              MechanicalSoundType.playClack,
-                              settings: settings,
-                            );
                             ref.read(playbackNotifierProvider.notifier).playTrack(
                               folder.tracks.first,
                               queue: folder.tracks,
@@ -314,10 +305,6 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
                           style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted, fontSize: 10),
                         ),
                         onTap: () {
-                          MechanicalSoundService.instance.playMechanicalSound(
-                            MechanicalSoundType.playClack,
-                            settings: settings,
-                          );
                           ref.read(playbackNotifierProvider.notifier).playTrack(
                             track,
                             queue: folder.tracks,

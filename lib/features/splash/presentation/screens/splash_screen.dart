@@ -1,10 +1,8 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/services/mechanical_sound_service.dart';
 import '../../../navigation/presentation/screens/main_shell_screen.dart';
-import '../../../settings/presentation/providers/settings_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -36,16 +34,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
 
     _animController.forward();
-
-    // Play subtle mechanical tape latch sound on startup
-    Future.delayed(const Duration(milliseconds: 150), () {
-      if (mounted) {
-        MechanicalSoundService.instance.playMechanicalSound(
-          MechanicalSoundType.playClack,
-          settings: ref.read(settingsNotifierProvider),
-        );
-      }
-    });
 
     // Navigate to MainShellScreen after splash display
     Timer(const Duration(milliseconds: 1800), () {

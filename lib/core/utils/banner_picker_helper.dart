@@ -1,13 +1,11 @@
-﻿import 'package:file_picker/file_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
-import '../services/mechanical_sound_service.dart';
 import '../../features/audio_player/domain/audio_track.dart';
 import '../../features/audio_player/presentation/providers/audio_player_provider.dart';
 import '../../features/library/presentation/providers/library_provider.dart';
-import '../../features/settings/presentation/providers/settings_provider.dart';
 
 class BannerPickerHelper {
   static Future<void> pickAndSetBanner({
@@ -25,7 +23,6 @@ class BannerPickerHelper {
       }
 
       final pickedPath = files.first.path!;
-      final settings = ref.read(settingsNotifierProvider);
 
       if (!context.mounted) return;
 
@@ -89,10 +86,6 @@ class BannerPickerHelper {
                       Navigator.of(dialogCtx).pop();
                       await ref.read(libraryNotifierProvider.notifier).updateSongCustomArt(track.id, pickedPath);
                       ref.read(playbackNotifierProvider.notifier).updateCurrentTrackArt(pickedPath);
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.cassetteInsert,
-                        settings: settings,
-                      );
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -126,10 +119,6 @@ class BannerPickerHelper {
                       Navigator.of(dialogCtx).pop();
                       await ref.read(libraryNotifierProvider.notifier).updateAlbumCustomArt(track.album, pickedPath);
                       ref.read(playbackNotifierProvider.notifier).updateCurrentTrackArt(pickedPath);
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.cassetteInsert,
-                        settings: settings,
-                      );
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

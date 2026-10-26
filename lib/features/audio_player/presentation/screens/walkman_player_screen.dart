@@ -42,6 +42,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
   // 2: Walkman open, Cassette loaded in Bay (rotated 90 deg)
   // 3: Walkman closed, Cassette loaded & visible through transparent glass
   int _step = 3;
+  int _selectedTrackIndex = 0;
 
   late final AnimationController _lidAnimController;
   late final Animation<double> _lidAnimation;
@@ -61,7 +62,13 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     super.initState();
 
     final playbackState = ref.read(playbackNotifierProvider);
-    if (playbackState.currentTrack != null) {
+    final libraryState = ref.read(libraryNotifierProvider);
+    final songs = playbackState.queue.isNotEmpty ? playbackState.queue : libraryState.allSongs;
+    if (playbackState.currentTrack != null && songs.isNotEmpty) {
+      final idx = songs.indexWhere((t) => t.id == playbackState.currentTrack!.id);
+      if (idx >= 0) {
+        _selectedTrackIndex = idx;
+      }
       _step = 3;
     } else {
       _step = 0;
@@ -141,6 +148,35 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
       if (_reelSpinController.isAnimating) {
         _reelSpinController.stop();
       }
+    }
+  }
+
+  void _swapCassette(int delta) {
+    final songs = ref.read(playbackNotifierProvider).queue.isNotEmpty
+        ? ref.read(playbackNotifierProvider).queue
+        : ref.read(libraryNotifierProvider).allSongs;
+    if (songs.isEmpty) return;
+    setState(() {
+      _selectedTrackIndex = (_selectedTrackIndex + delta) % songs.length;
+      if (_selectedTrackIndex < 0) _selectedTrackIndex += songs.length;
+    });
+    MechanicalSoundService.instance.playMechanicalSound(
+      MechanicalSoundType.skipClick,
+      settings: ref.read(settingsNotifierProvider),
+    );
+  }
+
+  Future<void> _ejectAndSwap() async {
+    if (ref.read(playbackNotifierProvider).isPlaying) {
+      ref.read(playbackNotifierProvider.notifier).pause();
+    }
+    if (_step == 3) {
+      await _transitionToStep(2);
+      await _transitionToStep(1);
+    } else if (_step == 2) {
+      await _transitionToStep(1);
+    } else if (_step == 0) {
+      await _transitionToStep(1);
     }
   }
 
@@ -609,7 +645,19 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     final settings = ref.watch(settingsNotifierProvider);
     final libraryState = ref.watch(libraryNotifierProvider);
     final theme = _resolveWalkmanTheme(settings);
-    final track = playbackState.currentTrack;
+
+    final songs = playbackState.queue.isNotEmpty ? playbackState.queue : libraryState.allSongs;
+    if (_step == 3 && playbackState.isPlaying && playbackState.currentTrack != null) {
+      final curIdx = songs.indexWhere((t) => t.id == playbackState.currentTrack!.id);
+      if (curIdx >= 0 && curIdx != _selectedTrackIndex) {
+        _selectedTrackIndex = curIdx;
+      }
+    }
+    final int safeIndex = songs.isNotEmpty ? _selectedTrackIndex.clamp(0, songs.length - 1) : 0;
+    final AudioTrack? activeTapeTrack = songs.isNotEmpty
+        ? songs[safeIndex]
+        : playbackState.currentTrack;
+    final track = activeTapeTrack;
 
     _syncReelAnimation(playbackState.isPlaying);
 
@@ -798,6 +846,67 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                   ),
                                 ),
 
+                                // Cassette Swapper Navigation Pill (State 0 & 1)
+                                if (_step <= 1 && songs.length > 1)
+                                  Positioned(
+                                    left: 20,
+                                    top: 256,
+                                    width: 220,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xEE121419),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: settings.accentColor.withAlpha(120), width: 1.0),
+                                        boxShadow: const [
+                                          BoxShadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          InkWell(
+                                            onTap: () => _swapCassette(-1),
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.chevron_left_rounded, size: 16, color: Colors.white70),
+                                                  Text('PREV', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70)),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            'TAPE ${safeIndex + 1}/${songs.length}',
+                                            style: TextStyle(
+                                              fontFamily: 'Courier',
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: settings.accentColor,
+                                            ),
+                                          ),
+                                          InkWell(
+                                            onTap: () => _swapCassette(1),
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: const Padding(
+                                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text('NEXT', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70)),
+                                                  Icon(Icons.chevron_right_rounded, size: 16, color: Colors.white70),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
                                 // Cassette Jewel Case (Displays album art cover in State 0 & 1)
                                 if (_step <= 1)
                                   Positioned(
@@ -805,21 +914,30 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                     top: 290,
                                     width: 220,
                                     height: 140,
-                                    child: AnimatedBuilder(
-                                      animation: _caseLidAnimController,
-                                      builder: (context, _) {
-                                        return _buildCassetteCase(
-                                          track: track,
-                                          openAngle: _caseLidAnimation.value,
-                                          onTap: () {
-                                            if (_step == 0) {
-                                              _transitionToStep(1);
-                                            } else if (_step == 1) {
-                                              _transitionToStep(0);
-                                            }
-                                          },
-                                        );
+                                    child: GestureDetector(
+                                      onHorizontalDragEnd: (details) {
+                                        if (details.primaryVelocity! < -100) {
+                                          _swapCassette(1);
+                                        } else if (details.primaryVelocity! > 100) {
+                                          _swapCassette(-1);
+                                        }
                                       },
+                                      child: AnimatedBuilder(
+                                        animation: _caseLidAnimController,
+                                        builder: (context, _) {
+                                          return _buildCassetteCase(
+                                            track: track,
+                                            openAngle: _caseLidAnimation.value,
+                                            onTap: () {
+                                              if (_step == 0) {
+                                                _transitionToStep(1);
+                                              } else if (_step == 1) {
+                                                _transitionToStep(0);
+                                              }
+                                            },
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
 
@@ -842,6 +960,15 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                         angle: currentAngle,
                                         alignment: Alignment.center,
                                         child: GestureDetector(
+                                          onHorizontalDragEnd: _step <= 1
+                                              ? (details) {
+                                                  if (details.primaryVelocity! < -100) {
+                                                    _swapCassette(1);
+                                                  } else if (details.primaryVelocity! > 100) {
+                                                    _swapCassette(-1);
+                                                  }
+                                                }
+                                              : null,
                                           onTap: () {
                                             if (_step == 1) {
                                               _transitionToStep(2);
@@ -915,6 +1042,8 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                         _transitionToStep(1);
                                       } else if (_step == 3) {
                                         _transitionToStep(2);
+                                      } else if (_step == 2) {
+                                        _transitionToStep(1);
                                       }
                                     },
                                     onPlay: () {
@@ -922,13 +1051,20 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                         if (playbackState.isPlaying) {
                                           ref.read(playbackNotifierProvider.notifier).pause();
                                         } else {
-                                          if (track == null && libraryState.allSongs.isNotEmpty) {
+                                          if (track != null) {
+                                            if (playbackState.currentTrack?.id != track.id) {
+                                              ref.read(playbackNotifierProvider.notifier).playTrack(
+                                                track,
+                                                queue: songs,
+                                              );
+                                            } else {
+                                              ref.read(playbackNotifierProvider.notifier).resume();
+                                            }
+                                          } else if (songs.isNotEmpty) {
                                             ref.read(playbackNotifierProvider.notifier).playTrack(
-                                              libraryState.allSongs.first,
-                                              queue: libraryState.allSongs,
+                                              songs.first,
+                                              queue: songs,
                                             );
-                                          } else {
-                                            ref.read(playbackNotifierProvider.notifier).resume();
                                           }
                                         }
                                       }
@@ -977,6 +1113,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
               settings: settings,
               playbackState: playbackState,
               trackTitle: track?.title,
+              onEject: _ejectAndSwap,
               onGoNext: () {
                 if (_step < 3) {
                   _transitionToStep(_step + 1);
@@ -989,13 +1126,20 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                   if (isPlaying) {
                     ref.read(playbackNotifierProvider.notifier).pause();
                   } else {
-                    if (track == null && libraryState.allSongs.isNotEmpty) {
+                    if (track != null) {
+                      if (playbackState.currentTrack?.id != track.id) {
+                        ref.read(playbackNotifierProvider.notifier).playTrack(
+                          track,
+                          queue: songs,
+                        );
+                      } else {
+                        ref.read(playbackNotifierProvider.notifier).resume();
+                      }
+                    } else if (songs.isNotEmpty) {
                       ref.read(playbackNotifierProvider.notifier).playTrack(
-                        libraryState.allSongs.first,
-                        queue: libraryState.allSongs,
+                        songs.first,
+                        queue: songs,
                       );
-                    } else {
-                      ref.read(playbackNotifierProvider.notifier).resume();
                     }
                   }
                 }
@@ -1841,6 +1985,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     required AppSettings settings,
     required SpoolPlaybackState playbackState,
     required String? trackTitle,
+    required VoidCallback onEject,
     required VoidCallback onGoNext,
     required VoidCallback onBack,
   }) {
@@ -1850,17 +1995,17 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
 
     switch (_step) {
       case 0:
-        statusMsg = 'Chassis lid closed. Tap to open.';
+        statusMsg = 'Chassis lid closed. Tap OPEN LID.';
         actionLabel = 'OPEN LID';
         actionIcon = Icons.lock_open_rounded;
         break;
       case 1:
-        statusMsg = 'Lid open. Insert cassette into player.';
+        statusMsg = 'Lid open. Swap tape or tap INSERT TAPE.';
         actionLabel = 'INSERT TAPE';
         actionIcon = Icons.vertical_align_bottom_rounded;
         break;
       case 2:
-        statusMsg = 'Cassette loaded. Close lid to listen.';
+        statusMsg = 'Cassette loaded in bay. Close lid to listen.';
         actionLabel = 'CLOSE LID';
         actionIcon = Icons.lock_outline_rounded;
         break;
@@ -1871,7 +2016,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
           actionLabel = 'PAUSE';
           actionIcon = Icons.pause_rounded;
         } else {
-          statusMsg = 'Ready to play';
+          statusMsg = trackTitle != null ? 'Ready: $trackTitle' : 'Ready to play';
           actionLabel = 'PLAY';
           actionIcon = Icons.play_arrow_rounded;
         }
@@ -1937,11 +2082,30 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                 ),
                 child: const Text('BACK', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
               ),
-              const SizedBox(width: 12),
+              if (_step >= 2) ...[
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: onEject,
+                  icon: const Icon(Icons.swap_horiz_rounded, size: 16, color: AppColors.tapeAmber),
+                  label: const Text(
+                    'SWAP TAPE',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.tapeAmber),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.tapeAmber,
+                    side: const BorderSide(color: AppColors.tapeAmber, width: 1.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: onGoNext,
                 icon: Icon(actionIcon, size: 18, color: buttonFg),
@@ -1961,7 +2125,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                 ),
               ),
             ],

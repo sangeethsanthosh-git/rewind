@@ -5,12 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
-import '../../../../core/services/mechanical_sound_service.dart';
 import '../../../../core/widgets/artwork_widget.dart';
 import '../../../audio_player/presentation/screens/now_playing_screen.dart';
 import '../../../audio_player/domain/audio_track.dart';
 import '../../../audio_player/presentation/providers/audio_player_provider.dart';
-import '../../../settings/presentation/providers/settings_provider.dart';
 
 /// Responsive 3D Song Stack with acrylic cassette jewel box aesthetics,
 /// immediate playback response, and authentic retro mechanical interactions.
@@ -69,10 +67,6 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     if (_lastSnappedIndex != nearest) {
       _lastSnappedIndex = nearest;
       HapticFeedback.selectionClick();
-      MechanicalSoundService.instance.playMechanicalSound(
-        MechanicalSoundType.skipClick,
-        settings: ref.read(settingsNotifierProvider),
-      );
     }
   }
 
@@ -133,10 +127,6 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
       return;
     }
     _scrollToIndex(index);
-    MechanicalSoundService.instance.playMechanicalSound(
-      MechanicalSoundType.doorLatch,
-      settings: ref.read(settingsNotifierProvider),
-    );
     HapticFeedback.mediumImpact();
 
     if (widget.onTrackTap != null) {

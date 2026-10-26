@@ -1,11 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
-import '../services/mechanical_sound_service.dart';
 import '../../features/audio_player/domain/audio_track.dart';
 import '../../features/collections/presentation/providers/collections_provider.dart';
-import '../../features/settings/presentation/providers/settings_provider.dart';
 
 class AddToTapeModal {
   static void show(
@@ -50,7 +48,6 @@ class _AddToTapeContentState extends ConsumerState<_AddToTapeContent> {
   @override
   Widget build(BuildContext context) {
     final collections = ref.watch(collectionsNotifierProvider);
-    final settings = ref.watch(settingsNotifierProvider);
     final tapes = collections.playlists;
 
     return SafeArea(
@@ -218,11 +215,6 @@ class _AddToTapeContentState extends ConsumerState<_AddToTapeContent> {
                               .read(collectionsNotifierProvider.notifier)
                               .addSongToPlaylist(newTapeId, widget.track.id);
 
-                          MechanicalSoundService.instance.playMechanicalSound(
-                            MechanicalSoundType.cassetteInsert,
-                            settings: settings,
-                          );
-
                           if (context.mounted) {
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -360,11 +352,6 @@ class _AddToTapeContentState extends ConsumerState<_AddToTapeContent> {
                         await ref
                             .read(collectionsNotifierProvider.notifier)
                             .addSongToPlaylist(tape.id, widget.track.id);
-
-                        MechanicalSoundService.instance.playMechanicalSound(
-                          MechanicalSoundType.cassetteInsert,
-                          settings: settings,
-                        );
 
                         if (context.mounted) {
                           Navigator.of(context).pop();

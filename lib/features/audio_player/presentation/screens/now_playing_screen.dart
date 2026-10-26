@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
-import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/core/utils/banner_picker_helper.dart';
 import 'package:spool/core/utils/formatters.dart';
 import 'package:spool/core/widgets/add_to_tape_modal.dart';
@@ -150,10 +149,6 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                             icon: Icon(Icons.radio_outlined, color: settings.accentColor, size: 22),
                             tooltip: 'Open Walkman Chassis',
                             onPressed: () {
-                              MechanicalSoundService.instance.playMechanicalSound(
-                                MechanicalSoundType.doorLatch,
-                                settings: settings,
-                              );
                               Navigator.of(context).push(
                                 MaterialPageRoute(builder: (context) => const WalkmanPlayerScreen()),
                               );
@@ -218,18 +213,10 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     if (details.primaryVelocity! < -250) {
                       // Swiped left -> Next song
                       setState(() => _slideDirection = 1);
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.skipClick,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).skipToNext();
                     } else if (details.primaryVelocity! > 250) {
                       // Swiped right -> Previous song
                       setState(() => _slideDirection = -1);
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.skipClick,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).skipToPrevious();
                     }
                   }
@@ -340,10 +327,6 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       size: 26,
                     ),
                     onPressed: () {
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.skipClick,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).toggleFavorite(track);
                     },
                   ),
@@ -441,10 +424,6 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       size: 22,
                     ),
                     onPressed: () {
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.skipClick,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).toggleShuffle();
                     },
                   ),
@@ -453,22 +432,12 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     icon: const Icon(Icons.skip_previous_rounded, color: AppColors.textPrimary, size: 36),
                     onPressed: () {
                       setState(() => _slideDirection = -1);
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.skipClick,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).skipToPrevious();
                     },
                   ),
                   // Big Tactile Play/Pause Clack Button
                   GestureDetector(
                     onTap: () {
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        playbackState.isPlaying
-                            ? MechanicalSoundType.pauseClick
-                            : MechanicalSoundType.playClack,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).togglePlayPause();
                     },
                     child: Container(
@@ -501,10 +470,6 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     icon: const Icon(Icons.skip_next_rounded, color: AppColors.textPrimary, size: 36),
                     onPressed: () {
                       setState(() => _slideDirection = 1);
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.skipClick,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).skipToNext();
                     },
                   ),
@@ -518,10 +483,6 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       size: 22,
                     ),
                     onPressed: () {
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.skipClick,
-                        settings: settings,
-                      );
                       ref.read(playbackNotifierProvider.notifier).toggleRepeat();
                     },
                   ),
@@ -623,11 +584,6 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
     final isSelected = _visualMode == mode;
     return GestureDetector(
       onTap: () {
-        final settings = ref.read(settingsNotifierProvider);
-        MechanicalSoundService.instance.playMechanicalSound(
-          MechanicalSoundType.skipClick,
-          settings: settings,
-        );
         setState(() => _visualMode = mode);
       },
       child: Container(

@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
-import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
 import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
 import 'package:spool/features/home/presentation/widgets/responsive_song_stack.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
-import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   final Function(int targetTabIndex)? onNavigateToTab;
@@ -87,10 +85,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ref.read(playbackNotifierProvider.notifier).playTrack(
                         track,
                         queue: allSongs,
-                      );
-                      MechanicalSoundService.instance.playMechanicalSound(
-                        MechanicalSoundType.playClack,
-                        settings: ref.read(settingsNotifierProvider),
                       );
                       Navigator.of(context).push(
                         MaterialPageRoute(

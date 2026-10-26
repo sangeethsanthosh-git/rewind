@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
-import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
 import 'package:spool/features/collections/presentation/providers/collections_provider.dart';
 import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
@@ -87,10 +86,6 @@ class SettingsScreen extends ConsumerWidget {
                           final files = await FilePicker.pickFiles(type: FileType.image);
                           if (files.isNotEmpty && files.first.path != null) {
                             settingsNotifier.setCustomBackgroundImage(files.first.path);
-                            MechanicalSoundService.instance.playMechanicalSound(
-                              MechanicalSoundType.cassetteInsert,
-                              settings: settings,
-                            );
                           }
                         },
                       ),
@@ -145,10 +140,6 @@ class SettingsScreen extends ConsumerWidget {
                             tooltip: 'Remove Custom Image',
                             onPressed: () {
                               settingsNotifier.setCustomBackgroundImage(null);
-                              MechanicalSoundService.instance.playMechanicalSound(
-                                MechanicalSoundType.cassetteEject,
-                                settings: settings,
-                              );
                             },
                           ),
                         ],
@@ -170,10 +161,6 @@ class SettingsScreen extends ConsumerWidget {
               value: settings.useSongBannerCanvas,
               onChanged: (val) {
                 settingsNotifier.setUseSongBannerCanvas(val);
-                MechanicalSoundService.instance.playMechanicalSound(
-                  MechanicalSoundType.skipClick,
-                  settings: settings,
-                );
               },
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
@@ -318,10 +305,6 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: Text('Interactive 3D chassis with hinged lid, tactile keys & spools', style: AppTypography.bodySmall),
               trailing: const Icon(Icons.chevron_right, color: Colors.white54),
               onTap: () {
-                MechanicalSoundService.instance.playMechanicalSound(
-                  MechanicalSoundType.doorLatch,
-                  settings: settings,
-                );
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const WalkmanPlayerScreen()),
                 );
@@ -331,17 +314,9 @@ class SettingsScreen extends ConsumerWidget {
             SwitchListTile(
               activeThumbColor: settings.accentColor,
               title: Text('Mechanical Button Sounds', style: AppTypography.bodyMedium),
-              subtitle: Text('Authentic mechanical clacks, latch snaps and switch clicks', style: AppTypography.bodySmall),
+              subtitle: Text('Authentic mechanical clacks, latch snaps and switch clicks (in Walkman)', style: AppTypography.bodySmall),
               value: settings.enableMechanicalSounds,
-              onChanged: (val) {
-                settingsNotifier.setMechanicalSounds(val);
-                if (val) {
-                  MechanicalSoundService.instance.playMechanicalSound(
-                    MechanicalSoundType.playClack,
-                    settings: settings.copyWith(enableMechanicalSounds: true),
-                  );
-                }
-              },
+              onChanged: (val) => settingsNotifier.setMechanicalSounds(val),
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
@@ -389,12 +364,6 @@ class SettingsScreen extends ConsumerWidget {
                     child: Slider(
                       value: settings.uiSoundVolume,
                       onChanged: (val) => settingsNotifier.setUiSoundVolume(val),
-                      onChangeEnd: (val) {
-                        MechanicalSoundService.instance.playMechanicalSound(
-                          MechanicalSoundType.skipClick,
-                          settings: settings.copyWith(uiSoundVolume: val),
-                        );
-                      },
                     ),
                   ),
                 ],
@@ -423,10 +392,6 @@ class SettingsScreen extends ConsumerWidget {
                 onChanged: (profile) {
                   if (profile != null) {
                     settingsNotifier.setSoundProfile(profile);
-                    MechanicalSoundService.instance.playMechanicalSound(
-                      MechanicalSoundType.playClack,
-                      settings: settings.copyWith(soundProfile: profile),
-                    );
                   }
                 },
               ),

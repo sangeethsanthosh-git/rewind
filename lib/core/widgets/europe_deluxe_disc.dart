@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
-import '../services/mechanical_sound_service.dart';
 import '../../features/audio_player/domain/audio_track.dart';
 import '../../features/library/domain/folder_model.dart';
 import '../../features/settings/domain/app_settings.dart';
@@ -90,10 +89,6 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
   }
 
   void _turn(double radians) {
-    MechanicalSoundService.instance.playMechanicalSound(
-      MechanicalSoundType.skipClick,
-      settings: widget.settings ?? const AppSettings(),
-    );
     _spin.animateTo(
       _spin.value + radians,
       duration: const Duration(milliseconds: 360),
@@ -102,10 +97,6 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
   }
 
   void _resetSpin() {
-    MechanicalSoundService.instance.playMechanicalSound(
-      MechanicalSoundType.skipClick,
-      settings: widget.settings ?? const AppSettings(),
-    );
     final target = (_spin.value / (2 * math.pi)).round() * 2 * math.pi;
     _spin.animateTo(
       target,
@@ -250,10 +241,6 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
                               ),
                             ),
                             onPressed: () {
-                              MechanicalSoundService.instance.playMechanicalSound(
-                                MechanicalSoundType.cassetteInsert,
-                                settings: widget.settings ?? const AppSettings(),
-                              );
                               widget.onFolderTap?.call(activeFolder);
                             },
                           ),
@@ -292,17 +279,9 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
                           tracks: widget.tracks,
                           activeTrackId: widget.activeTrackId,
                           onTapFolder: (folder) {
-                            MechanicalSoundService.instance.playMechanicalSound(
-                              MechanicalSoundType.cassetteInsert,
-                              settings: widget.settings ?? const AppSettings(),
-                            );
                             widget.onFolderTap?.call(folder);
                           },
                           onTapTrack: (track) {
-                            MechanicalSoundService.instance.playMechanicalSound(
-                              MechanicalSoundType.cassetteInsert,
-                              settings: widget.settings ?? const AppSettings(),
-                            );
                             widget.onTrackTap?.call(track);
                           },
                         ),
@@ -405,10 +384,6 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
   }
 
   void _cycleBackdropScene() {
-    MechanicalSoundService.instance.playMechanicalSound(
-      MechanicalSoundType.skipClick,
-      settings: widget.settings ?? const AppSettings(),
-    );
     setState(() {
       _bgSceneIndex = (_bgSceneIndex + 1) % 4;
       _customBackdropPath = null;

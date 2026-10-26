@@ -449,4 +449,70 @@ void main() {
     expect(find.text('LYRICS'), findsOneWidget);
     expect(find.text('LYRICS'), findsOneWidget);
   });
+
+  testWidgets('WalkmanPlayerScreen supports swapping cassettes when open in case', (WidgetTester tester) async {
+    const track1 = AudioTrack(
+      id: 'tape_a',
+      title: 'Cassette Track A',
+      artist: 'Artist A',
+      album: 'Album A',
+      durationMs: 180000,
+      uri: 'test://tape_a',
+      path: '/test/tape_a.mp3',
+      fileExtension: 'mp3',
+    );
+    const track2 = AudioTrack(
+      id: 'tape_b',
+      title: 'Cassette Track B',
+      artist: 'Artist B',
+      album: 'Album B',
+      durationMs: 200000,
+      uri: 'test://tape_b',
+      path: '/test/tape_b.mp3',
+      fileExtension: 'mp3',
+    );
+
+    final service = _QuietTestAudioService(const SpoolPlaybackState(
+      currentTrack: null,
+      isPlaying: false,
+      position: Duration.zero,
+      duration: Duration.zero,
+      queue: [track1, track2],
+    ));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          playbackNotifierProvider.overrideWith((ref) => _FixedTrackPlaybackNotifier(service)),
+        ],
+        child: const MaterialApp(
+          home: WalkmanPlayerScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    // At start, currentTrack is null, so _step is 0
+    expect(find.text('OPEN LID'), findsOneWidget);
+    // Open lid
+    await tester.tap(find.text('OPEN LID'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 900));
+
+    // Now in Step 1: case is open, swapper pill is visible
+    expect(find.text('TAPE 1/2'), findsOneWidget);
+    expect(find.text('Cassette Track A'), findsWidgets);
+
+    // Tap NEXT to swap to Tape 2
+    await tester.tap(find.text('NEXT'));
+    await tester.pump();
+    expect(find.text('TAPE 2/2'), findsOneWidget);
+    expect(find.text('Cassette Track B'), findsWidgets);
+
+    // Tap INSERT TAPE to load it into the bay
+    await tester.tap(find.text('INSERT TAPE'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 950));
+    expect(find.text('CLOSE LID'), findsOneWidget);
+  });
 }
