@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 enum AppThemeMode { dark, light, system }
 
@@ -37,6 +37,7 @@ class AppSettings {
   final bool reducedAnimation;
   final bool walkmanMode;
   final String walkmanChassisTheme;
+  final String? walkmanCustomSkinPath;
   final String walkmanBrandingText;
   final int walkmanHotlineColorValue;
 
@@ -65,6 +66,7 @@ class AppSettings {
     this.reducedAnimation = false,
     this.walkmanMode = false,
     this.walkmanChassisTheme = 'classicBlue',
+    this.walkmanCustomSkinPath,
     this.walkmanBrandingText = 'SONY',
     this.walkmanHotlineColorValue = 0xFFF08A1C,
   });
@@ -93,6 +95,8 @@ class AppSettings {
     bool? reducedAnimation,
     bool? walkmanMode,
     String? walkmanChassisTheme,
+    String? walkmanCustomSkinPath,
+    bool clearWalkmanCustomSkin = false,
     String? walkmanBrandingText,
     int? walkmanHotlineColorValue,
   }) {
@@ -120,6 +124,9 @@ class AppSettings {
       reducedAnimation: reducedAnimation ?? this.reducedAnimation,
       walkmanMode: walkmanMode ?? this.walkmanMode,
       walkmanChassisTheme: walkmanChassisTheme ?? this.walkmanChassisTheme,
+      walkmanCustomSkinPath: clearWalkmanCustomSkin
+          ? null
+          : (walkmanCustomSkinPath ?? this.walkmanCustomSkinPath),
       walkmanBrandingText: walkmanBrandingText ?? this.walkmanBrandingText,
       walkmanHotlineColorValue: walkmanHotlineColorValue ?? this.walkmanHotlineColorValue,
     );
@@ -141,6 +148,7 @@ class AppSettings {
       'reducedAnimation': reducedAnimation ? '1' : '0',
       'walkmanMode': walkmanMode ? '1' : '0',
       'walkmanChassisTheme': walkmanChassisTheme,
+      'walkmanCustomSkinPath': walkmanCustomSkinPath ?? '',
       'walkmanBrandingText': walkmanBrandingText,
       'walkmanHotlineColorValue': walkmanHotlineColorValue.toString(),
       'gaplessPlayback': gaplessPlayback ? '1' : '0',
@@ -151,10 +159,12 @@ class AppSettings {
   factory AppSettings.fromPersistenceMap(Map<String, String> map) {
     const defaults = AppSettings();
     final customBg = map['customBackgroundImagePath'];
+    final customSkin = map['walkmanCustomSkinPath'];
     final foldersStr = map['excludedFolders'];
 
     return AppSettings(
       customBackgroundImagePath: (customBg == null || customBg.isEmpty) ? null : customBg,
+      walkmanCustomSkinPath: (customSkin == null || customSkin.isEmpty) ? null : customSkin,
       useSongBannerCanvas: map.containsKey('useSongBannerCanvas')
           ? map['useSongBannerCanvas'] == '1'
           : defaults.useSongBannerCanvas,

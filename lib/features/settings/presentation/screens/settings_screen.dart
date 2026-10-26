@@ -9,7 +9,6 @@ import 'package:spool/core/constants/app_typography.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
 import 'package:spool/features/collections/presentation/providers/collections_provider.dart';
 import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
-import 'package:spool/features/audio_player/presentation/screens/walkman_player_screen.dart';
 import 'package:spool/features/settings/domain/app_settings.dart';
 import 'package:spool/features/settings/presentation/screens/codec_diagnostics_screen.dart';
 
@@ -299,38 +298,128 @@ class SettingsScreen extends ConsumerWidget {
           // Section: Walkman & Mechanical Experience
           _buildSectionHeader('WALKMAN & MECHANICAL EXPERIENCE'),
           _buildCard([
-            ListTile(
-              leading: Icon(Icons.radio_outlined, color: settings.accentColor),
-              title: Text('Launch Walkman Mode', style: AppTypography.bodyMedium),
-              subtitle: Text('Interactive 3D chassis with hinged lid, tactile keys & spools', style: AppTypography.bodySmall),
-              trailing: const Icon(Icons.chevron_right, color: Colors.white54),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const WalkmanPlayerScreen()),
-                );
-              },
+            // Walkman Custom Skin row
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Walkman Chassis Skin',
+                              style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Wrap the Walkman body with a custom image skin',
+                              style: AppTypography.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: settings.accentColor,
+                          foregroundColor: accentFg,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: Icon(Icons.brush_rounded, size: 16, color: accentFg),
+                        label: Text(
+                          settings.walkmanCustomSkinPath != null ? 'CHANGE' : 'CHOOSE',
+                          style: AppTypography.monoSmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10.5,
+                            color: accentFg,
+                          ),
+                        ),
+                        onPressed: () async {
+                          final files = await FilePicker.pickFiles(type: FileType.image);
+                          if (files.isNotEmpty && files.first.path != null) {
+                            settingsNotifier.setWalkmanCustomSkin(files.first.path);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  if (settings.walkmanCustomSkinPath != null &&
+                      File(settings.walkmanCustomSkinPath!).existsSync()) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: themePalette.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: settings.accentColor.withAlpha(120), width: 1.2),
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Image.file(
+                              File(settings.walkmanCustomSkinPath!),
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'ACTIVE CHASSIS SKIN',
+                                  style: AppTypography.monoSmall.copyWith(
+                                    color: settings.accentColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 9.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  settings.walkmanCustomSkinPath!.split(Platform.pathSeparator).last,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.bodySmall.copyWith(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: AppColors.vinylRed),
+                            tooltip: 'Remove Custom Skin',
+                            onPressed: () {
+                              settingsNotifier.setWalkmanCustomSkin(null);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
               activeThumbColor: settings.accentColor,
-              title: Text('Mechanical Button Sounds', style: AppTypography.bodyMedium),
-              subtitle: Text('Authentic mechanical clacks, latch snaps and switch clicks (in Walkman)', style: AppTypography.bodySmall),
+              title: Text('Walkman Button Sounds', style: AppTypography.bodyMedium),
+              subtitle: Text('Authentic mechanical clacks, latch snaps and switch clicks during tape playback', style: AppTypography.bodySmall),
               value: settings.enableMechanicalSounds,
               onChanged: (val) => settingsNotifier.setMechanicalSounds(val),
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
               activeThumbColor: settings.accentColor,
-              title: Text('Cassette Load / Eject Sounds', style: AppTypography.bodyMedium),
-              subtitle: Text('Plastic shell carriage slide, spring eject and seat click', style: AppTypography.bodySmall),
-              value: settings.enableCassetteSounds,
-              onChanged: (val) => settingsNotifier.setCassetteSounds(val),
-            ),
-            const Divider(color: AppColors.borderSubtle, height: 1),
-            SwitchListTile(
-              activeThumbColor: settings.accentColor,
-              title: Text('Subtle Motor Ambience', style: AppTypography.bodyMedium),
-              subtitle: Text('Faint analog capstan DC motor transport hum during playback', style: AppTypography.bodySmall),
+              title: Text('Motor Ambience', style: AppTypography.bodyMedium),
+              subtitle: Text('Subtle analog capstan DC motor transport hum during playback', style: AppTypography.bodySmall),
               value: settings.enableMotorAmbience,
               onChanged: (val) => settingsNotifier.setMotorAmbience(val),
             ),
@@ -338,7 +427,7 @@ class SettingsScreen extends ConsumerWidget {
             SwitchListTile(
               activeThumbColor: settings.accentColor,
               title: Text('Tactile Haptic Feedback', style: AppTypography.bodyMedium),
-              subtitle: Text('Physical vibration responses on button clicks and tape loading', style: AppTypography.bodySmall),
+              subtitle: Text('Physical vibration responses on key clicks and tape loading', style: AppTypography.bodySmall),
               value: settings.enableHaptics,
               onChanged: (val) => settingsNotifier.setHaptics(val),
             ),
@@ -395,14 +484,6 @@ class SettingsScreen extends ConsumerWidget {
                   }
                 },
               ),
-            ),
-            const Divider(color: AppColors.borderSubtle, height: 1),
-            SwitchListTile(
-              activeThumbColor: settings.accentColor,
-              title: Text('Reduced Animation', style: AppTypography.bodyMedium),
-              subtitle: Text('Faster navigation, bypasses sliding carriage door sequence', style: AppTypography.bodySmall),
-              value: settings.reducedAnimation,
-              onChanged: (val) => settingsNotifier.setReducedAnimation(val),
             ),
           ]),
 
@@ -590,9 +671,9 @@ class SettingsScreen extends ConsumerWidget {
           Center(
             child: Column(
               children: [
-                Text('REWIND V1.0.0 (WALKMAN SIGNATURE)', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
+                Text('REWIND v1.0.10 \u2022 WALKMAN EDITION', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                 const SizedBox(height: 4),
-                Text('Handcrafted with Flutter â€¢ Offline First', style: AppTypography.bodySmall.copyWith(fontSize: 10)),
+                Text('Handcrafted with Flutter \u2022 100% Offline', style: AppTypography.bodySmall.copyWith(fontSize: 10)),
               ],
             ),
           ),

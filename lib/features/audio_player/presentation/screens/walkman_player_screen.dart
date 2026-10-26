@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
@@ -436,8 +437,109 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                     ),
                     const SizedBox(height: 12),
 
-                    Text('CHASSIS FINISH', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
+                    Text('CHASSIS FINISH & CUSTOM SKIN', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                     const SizedBox(height: 8),
+
+                    // Custom Skin Image Picker Card
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF20222A),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: curSettings.walkmanCustomSkinPath != null
+                              ? curSettings.accentColor
+                              : Colors.white12,
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.brush_rounded, size: 18, color: curSettings.accentColor),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Custom Image Skin',
+                                  style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: curSettings.accentColor,
+                                  foregroundColor: curSettings.accentColor.computeLuminance() > 0.6 ? Colors.black : Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                icon: const Icon(Icons.add_photo_alternate_outlined, size: 15),
+                                label: Text(
+                                  curSettings.walkmanCustomSkinPath != null ? 'CHANGE' : 'CHOOSE SKIN',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () async {
+                                  final files = await FilePicker.pickFiles(type: FileType.image);
+                                  if (files.isNotEmpty && files.first.path != null) {
+                                    notifier.setWalkmanCustomSkin(files.first.path);
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          if (curSettings.walkmanCustomSkinPath != null &&
+                              File(curSettings.walkmanCustomSkinPath!).existsSync()) ...[
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Image.file(
+                                    File(curSettings.walkmanCustomSkinPath!),
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'ACTIVE WALKMAN SKIN',
+                                        style: TextStyle(
+                                          color: curSettings.accentColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 9.5,
+                                          fontFamily: 'Courier',
+                                        ),
+                                      ),
+                                      Text(
+                                        curSettings.walkmanCustomSkinPath!.split(Platform.pathSeparator).last,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: AppColors.vinylRed, size: 20),
+                                  tooltip: 'Remove Custom Skin',
+                                  onPressed: () {
+                                    notifier.setWalkmanCustomSkin(null);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text('PRESET COLOR THEMES', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted, fontSize: 10)),
+                    const SizedBox(height: 6),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -446,43 +548,61 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                           label: 'Classic TPS-L2',
                           code: 'classicBlue',
                           swatch: const Color(0xFF3868A0),
-                          current: curSettings.walkmanChassisTheme,
-                          onSelect: () => notifier.setWalkmanChassisTheme('classicBlue'),
+                          current: curSettings.walkmanCustomSkinPath != null ? '' : curSettings.walkmanChassisTheme,
+                          onSelect: () {
+                            notifier.setWalkmanCustomSkin(null);
+                            notifier.setWalkmanChassisTheme('classicBlue');
+                          },
                         ),
                         _buildThemeOptionChip(
                           label: 'Stealth Black',
                           code: 'stealthBlack',
                           swatch: const Color(0xFF26282E),
-                          current: curSettings.walkmanChassisTheme,
-                          onSelect: () => notifier.setWalkmanChassisTheme('stealthBlack'),
+                          current: curSettings.walkmanCustomSkinPath != null ? '' : curSettings.walkmanChassisTheme,
+                          onSelect: () {
+                            notifier.setWalkmanCustomSkin(null);
+                            notifier.setWalkmanChassisTheme('stealthBlack');
+                          },
                         ),
                         _buildThemeOptionChip(
                           label: 'Solar Yellow',
                           code: 'solarYellow',
                           swatch: const Color(0xFFF7CA45),
-                          current: curSettings.walkmanChassisTheme,
-                          onSelect: () => notifier.setWalkmanChassisTheme('solarYellow'),
+                          current: curSettings.walkmanCustomSkinPath != null ? '' : curSettings.walkmanChassisTheme,
+                          onSelect: () {
+                            notifier.setWalkmanCustomSkin(null);
+                            notifier.setWalkmanChassisTheme('solarYellow');
+                          },
                         ),
                         _buildThemeOptionChip(
                           label: 'Vintage Silver',
                           code: 'vintageSilver',
                           swatch: const Color(0xFFC4C8D2),
-                          current: curSettings.walkmanChassisTheme,
-                          onSelect: () => notifier.setWalkmanChassisTheme('vintageSilver'),
+                          current: curSettings.walkmanCustomSkinPath != null ? '' : curSettings.walkmanChassisTheme,
+                          onSelect: () {
+                            notifier.setWalkmanCustomSkin(null);
+                            notifier.setWalkmanChassisTheme('vintageSilver');
+                          },
                         ),
                         _buildThemeOptionChip(
                           label: 'Tokyo Burgundy',
                           code: 'tokyoBurgundy',
                           swatch: const Color(0xFF6B233D),
-                          current: curSettings.walkmanChassisTheme,
-                          onSelect: () => notifier.setWalkmanChassisTheme('tokyoBurgundy'),
+                          current: curSettings.walkmanCustomSkinPath != null ? '' : curSettings.walkmanChassisTheme,
+                          onSelect: () {
+                            notifier.setWalkmanCustomSkin(null);
+                            notifier.setWalkmanChassisTheme('tokyoBurgundy');
+                          },
                         ),
                         _buildThemeOptionChip(
                           label: 'Cyber Accent',
                           code: 'customAccent',
                           swatch: curSettings.accentColor,
-                          current: curSettings.walkmanChassisTheme,
-                          onSelect: () => notifier.setWalkmanChassisTheme('customAccent'),
+                          current: curSettings.walkmanCustomSkinPath != null ? '' : curSettings.walkmanChassisTheme,
+                          onSelect: () {
+                            notifier.setWalkmanCustomSkin(null);
+                            notifier.setWalkmanChassisTheme('customAccent');
+                          },
                         ),
                       ],
                     ),
@@ -763,6 +883,36 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
+                                // Custom User Walkman Skin Image layer
+                                if (settings.walkmanCustomSkinPath != null &&
+                                    File(settings.walkmanCustomSkinPath!).existsSync())
+                                  Positioned.fill(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          Image.file(
+                                            File(settings.walkmanCustomSkinPath!),
+                                            fit: BoxFit.cover,
+                                          ),
+                                          Container(
+                                            decoration: const BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                colors: [
+                                                  Color(0x28FFFFFF),
+                                                  Color(0x05000000),
+                                                  Color(0x40000000),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 // Top Hotline Tab
                                 Positioned(
                                   top: -7,
@@ -1019,7 +1169,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                             }
                                           },
                                           child: isFrontFacing
-                                              ? _buildLidFront(theme)
+                                              ? _buildLidFront(theme, settings)
                                               : _buildLidBack(theme),
                                         ),
                                       );
@@ -1191,7 +1341,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
   }
 
   /// 100% Transparent Acrylic Glass Window on Lid
-  Widget _buildLidFront(WalkmanThemeData theme) {
+  Widget _buildLidFront(WalkmanThemeData theme, AppSettings settings) {
     const windowRect = Rect.fromLTWH(16, 20, 188, 290);
 
     return CustomPaint(
@@ -1204,6 +1354,37 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
         height: 380,
         child: Stack(
           children: [
+            // Custom User Skin Image Layer on Lid Frame (window cut out with evenOdd path)
+            if (settings.walkmanCustomSkinPath != null &&
+                File(settings.walkmanCustomSkinPath!).existsSync())
+              Positioned.fill(
+                child: ClipPath(
+                  clipper: const LidCutoutClipper(windowRect),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.file(
+                        File(settings.walkmanCustomSkinPath!),
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0x22FFFFFF),
+                              Color(0x00000000),
+                              Color(0x35000000),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             // Transparent Acrylic Glass Reflection Sheen
             Positioned.fromRect(
               rect: windowRect,
@@ -2219,6 +2400,23 @@ class LidCutoutPainter extends CustomPainter {
   bool shouldRepaint(covariant LidCutoutPainter oldDelegate) {
     return oldDelegate.frameColor != frameColor || oldDelegate.windowRect != windowRect;
   }
+}
+
+/// Custom clipper to punch out the transparent acrylic inspection window on the lid
+class LidCutoutClipper extends CustomClipper<Path> {
+  final Rect windowRect;
+  const LidCutoutClipper(this.windowRect);
+
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..addRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(8)))
+      ..addRRect(RRect.fromRectAndRadius(windowRect, const Radius.circular(6)))
+      ..fillType = PathFillType.evenOdd;
+  }
+
+  @override
+  bool shouldReclip(covariant LidCutoutClipper oldClipper) => oldClipper.windowRect != windowRect;
 }
 
 /// Walkman Chassis Color Theme Definition

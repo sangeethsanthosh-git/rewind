@@ -21,7 +21,7 @@
     <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android" alt="Android" />
   </a>
   <a href="https://github.com/sangeethsanthosh-git/rewind/releases">
-    <img src="https://img.shields.io/badge/Release-v1.0.9-FF5E36?style=for-the-badge&logo=github" alt="Release v1.0.9" />
+    <img src="https://img.shields.io/badge/Release-v1.0.10-FF5E36?style=for-the-badge&logo=github" alt="Release v1.0.10" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" />
@@ -33,13 +33,13 @@
 
 ## ⚡ Download Release APKs
 
-Get the latest optimized build directly from the **[Releases](https://github.com/sangeethsanthosh-git/rewind/releases/tag/v1.0.9)**:
+Get the latest optimized build directly from the **[Releases](https://github.com/sangeethsanthosh-git/rewind/releases/tag/v1.0.10)**:
 
 | Architecture | Recommended Devices | Direct Download Link |
 | :--- | :--- | :--- |
-| **arm64-v8a** | Modern Android phones & tablets (64-bit) | [**Download APK (arm64-v8a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.9/app-arm64-v8a-release.apk) |
-| **armeabi-v7a** | Older Android devices (32-bit) | [**Download APK (armeabi-v7a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.9/app-armeabi-v7a-release.apk) |
-| **x86_64** | Chromebooks, emulators & PCs | [**Download APK (x86_64)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.9/app-x86_64-release.apk) |
+| **arm64-v8a** | Modern Android phones & tablets (64-bit) | [**Download APK (arm64-v8a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.10/app-arm64-v8a-release.apk) |
+| **armeabi-v7a** | Older Android devices (32-bit) | [**Download APK (armeabi-v7a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.10/app-armeabi-v7a-release.apk) |
+| **x86_64** | Chromebooks, emulators & PCs | [**Download APK (x86_64)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.10/app-x86_64-release.apk) |
 
 ---
 
@@ -53,20 +53,21 @@ Built from the ground up with **Flutter**, **Riverpod**, and **Just Audio**, REW
 
 ## ✨ Key Features
 
-### 📼 1. Authentic Walkman Chassis Mode & Cassette Swapping
+### 📼 1. Authentic Walkman Chassis Mode & Custom Skins
 - **Interactive Cassette Swapping**: Cycle through your collection by swiping horizontally on the cassette or tapping the tactile PREV / NEXT tape crate controls while the case is open.
 - **Physical Cassette Insertion Sequence**: Choose your cassette, insert it into the player bay, close the hinged acrylic lid, and press physical play to listen.
 - **Hinged Acrylic Inspection Door**: Watch your selected cassette tape rotate through a crystal-clear acrylic inspection window.
+- **Custom Image Skins & Themes**: Wrap the Walkman chassis with your own custom image skin or choose from presets (**Classic TPS-L2**, **Solar Yellow**, **Stealth Black**, **Vintage Silver**, and **Tokyo Burgundy**).
 - **One-Touch Eject & Swap**: Tap "SWAP TAPE" or press the physical OPEN / STOP keys to pop the door open, slide the cassette back into its J-card case, and choose another tape.
 - **Dynamic Cassette Spools**: Real-time rotating hubs with realistic magnetic tape winding between supply and take-up reels.
-- **Custom Walkman Themes**: Switch between **Classic TPS-L2**, **Solar Yellow**, **Stealth Black**, and **Vintage Silver** with custom branding engravings.
 
 ### 🖼️ 2. Full-Bleed Cassette Face & Banner Art
 - The track's album artwork spans the entire cassette face sticker with an authentic vintage gradient and centered tape transport inspection cutout.
 - Custom banner support: assign any custom picture to local audio tracks.
 
-### 🎚️ 3. 3D Dynamic Song Stack
+### 🎚️ 3. 3D Dynamic Song Stack & Wallpaper Backdrop
 - Signature acrylic crate of physical cassette cases on the home screen.
+- **Crystal Transparent Backdrop**: The opaque intermediate shelf background has been eliminated so your custom wallpaper and blur canvas shine directly behind your cassette slabs.
 - Scroll smoothly through your music crate and tap any track to play instantly with immediate audio response.
 
 ### 📜 4. Intelligent Conditional Lyrics

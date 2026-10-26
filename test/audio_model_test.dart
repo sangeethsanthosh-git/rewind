@@ -124,6 +124,7 @@ void main() {
         enableMotorAmbience: true,
         enableHaptics: false,
         walkmanChassisTheme: 'solarYellow',
+        walkmanCustomSkinPath: '/storage/custom_skin.png',
         walkmanBrandingText: 'TPS-L2',
         walkmanHotlineColorValue: 0xFFFFD60A,
       );
@@ -132,6 +133,7 @@ void main() {
       final restored = AppSettings.fromPersistenceMap(map);
 
       expect(restored.customBackgroundImagePath, '/storage/wallpaper.jpg');
+      expect(restored.walkmanCustomSkinPath, '/storage/custom_skin.png');
       expect(restored.backgroundBlurSigma, 12.5);
       expect(restored.backgroundDimLevel, 0.65);
       expect(restored.accentColorValue, 0xFF1DF74B);

@@ -161,11 +161,6 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
 
         return Stack(
           children: [
-            const Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(painter: _TapeShelfPainter()),
-              ),
-            ),
             // 3D Scene of floating cassette slabs
             Positioned.fill(
               child: IgnorePointer(
@@ -893,31 +888,4 @@ class _Title extends StatelessWidget {
       ),
     );
   }
-}
-
-class _TapeShelfPainter extends CustomPainter {
-  const _TapeShelfPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(0, -0.3),
-          radius: 1,
-          colors: [Color(0xFF30281C), Color(0xFF100F0C)],
-        ).createShader(rect),
-    );
-    final grain = Paint()
-      ..color = const Color(0x0CBFA780)
-      ..strokeWidth = 0.5;
-    for (double y = 0; y < size.height; y += 4) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), grain);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_TapeShelfPainter oldDelegate) => false;
 }

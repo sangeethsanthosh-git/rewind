@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/database/app_database.dart';
@@ -127,6 +127,15 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   void setWalkmanChassisTheme(String theme) {
     state = state.copyWith(walkmanChassisTheme: theme);
+    _persistSettings();
+  }
+
+  void setWalkmanCustomSkin(String? path) {
+    if (path == null) {
+      state = state.copyWith(clearWalkmanCustomSkin: true);
+    } else {
+      state = state.copyWith(walkmanCustomSkinPath: path);
+    }
     _persistSettings();
   }
 
