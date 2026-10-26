@@ -294,7 +294,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen> {
                                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
                                     activeTrackColor: const Color(0xFF222226),
                                     inactiveTrackColor: const Color(0xFF7A7A84),
-                                    thumbColor: AppColors.neonOrange,
+                                    thumbColor: settings.accentColor,
                                   ),
                                   child: Slider(
                                     value: _volumeLevel,
@@ -377,7 +377,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen> {
                                 width: playW,
                                 height: btnH,
                                 isDepressed: playbackState.isPlaying,
-                                accentColor: AppColors.neonOrange,
+                                accentColor: settings.accentColor,
                                 soundType: playbackState.isPlaying
                                     ? MechanicalSoundType.pauseClick
                                     : MechanicalSoundType.playClack,

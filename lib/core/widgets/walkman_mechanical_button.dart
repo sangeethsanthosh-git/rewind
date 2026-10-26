@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
 import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/features/settings/domain/app_settings.dart';
@@ -118,7 +117,7 @@ class _WalkmanMechanicalButtonState extends State<WalkmanMechanicalButton> {
               Icon(
                 widget.icon,
                 size: widget.isPrimary ? 24 : 18,
-                color: widget.accentColor ?? (active ? AppColors.neonOrange : const Color(0xFF222226)),
+                color: widget.accentColor ?? (active ? Theme.of(context).primaryColor : const Color(0xFF222226)),
               ),
             const SizedBox(height: 3),
             Text(
@@ -135,7 +134,7 @@ class _WalkmanMechanicalButtonState extends State<WalkmanMechanicalButton> {
               margin: const EdgeInsets.only(top: 3),
               width: 16,
               height: 1.5,
-              color: active ? AppColors.neonOrange : const Color(0xFF888892),
+              color: active ? (widget.accentColor ?? Theme.of(context).primaryColor) : const Color(0xFF888892),
             ),
           ],
         ),

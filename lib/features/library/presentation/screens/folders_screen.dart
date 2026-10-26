@@ -28,6 +28,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
     final libraryState = ref.watch(libraryNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
+    final accentColor = settings.accentColor;
     final folders = libraryState.folders;
 
     return Scaffold(
@@ -55,7 +56,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
         actions: [
           // Scan or Add Folder
           IconButton(
-            icon: const Icon(Icons.create_new_folder_outlined, color: AppColors.neonOrange),
+            icon: Icon(Icons.create_new_folder_outlined, color: accentColor),
             tooltip: 'Add Music Folder',
             onPressed: () async {
               final selectedDir = await FilePicker.getDirectoryPath();
@@ -96,6 +97,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final accentColor = Theme.of(context).primaryColor;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -125,7 +127,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.neonOrange,
+                backgroundColor: accentColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -171,6 +173,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
   void _showFolderTracks(BuildContext context, WidgetRef ref, FolderModel folder) {
     final settings = ref.read(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
+    final accentColor = settings.accentColor;
 
     showModalBottomSheet(
       context: context,
@@ -240,7 +243,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
                       // Play All Button
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.neonOrange,
+                          backgroundColor: accentColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

@@ -98,13 +98,13 @@ class _ViewMasterReelWidgetState extends State<ViewMasterReelWidget> {
                           color: Colors.black,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: _selectedIndex == i ? AppColors.neonOrange : const Color(0xFF44444C),
+                            color: _selectedIndex == i ? Theme.of(context).primaryColor : const Color(0xFF44444C),
                             width: _selectedIndex == i ? 2.0 : 1.0,
                           ),
                           boxShadow: [
                             if (_selectedIndex == i)
                               BoxShadow(
-                                color: AppColors.neonOrange.withAlpha(140),
+                                color: Theme.of(context).primaryColor.withAlpha(140),
                                 blurRadius: 8,
                               ),
                           ],

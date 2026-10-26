@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:spool/core/widgets/cassette_tape_widget.dart';
 import 'package:spool/core/widgets/europe_deluxe_disc.dart';
 import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
 import 'package:spool/core/widgets/retro_walkman_widget.dart';
@@ -267,5 +268,45 @@ void main() {
     expect(find.text('Vishal Chandrashekhar'), findsWidgets);
 
     await tester.pump(const Duration(seconds: 11));
+  });
+
+  testWidgets('CassetteTapeWidget renders photo-realistic cassette with rotating spools and album art sticker', (WidgetTester tester) async {
+    const testTrack = AudioTrack(
+      id: '999',
+      title: 'Bethlehem Kudumba Unit',
+      artist: 'Nivin Pauly, Mamitha Baiju',
+      album: 'Bethlehem Kudumba Unit',
+      durationMs: 240000,
+      uri: 'content://test/bethlehem',
+      path: '/test/bethlehem.mp3',
+      fileExtension: 'mp3',
+    );
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 360,
+                child: CassetteTapeWidget(
+                  track: testTrack,
+                  isPlaying: true,
+                  position: Duration(seconds: 45),
+                  duration: Duration(seconds: 240),
+                  accentColor: Color(0xFF1DF74B),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.byType(CassetteTapeWidget), findsOneWidget);
+    expect(find.text('Bethlehem Kudumba Unit'), findsOneWidget);
+    expect(find.text('SIDE A'), findsOneWidget);
+    expect(find.text('100 • 50 • 0'), findsOneWidget);
   });
 }

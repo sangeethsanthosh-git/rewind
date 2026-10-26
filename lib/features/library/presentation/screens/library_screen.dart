@@ -44,6 +44,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     final libraryState = ref.watch(libraryNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
+    final accentColor = settings.accentColor;
 
     return Scaffold(
       backgroundColor: themePalette.background,
@@ -73,18 +74,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             },
             color: AppColors.surfaceElevated,
             itemBuilder: (context) => [
-              _buildSortMenuItem(SortOption.title, 'Title', libraryState.sortOption),
-              _buildSortMenuItem(SortOption.artist, 'Artist', libraryState.sortOption),
-              _buildSortMenuItem(SortOption.album, 'Album', libraryState.sortOption),
-              _buildSortMenuItem(SortOption.duration, 'Duration', libraryState.sortOption),
-              _buildSortMenuItem(SortOption.dateAdded, 'Date Added', libraryState.sortOption),
+              _buildSortMenuItem(SortOption.title, 'Title', libraryState.sortOption, accentColor),
+              _buildSortMenuItem(SortOption.artist, 'Artist', libraryState.sortOption, accentColor),
+              _buildSortMenuItem(SortOption.album, 'Album', libraryState.sortOption, accentColor),
+              _buildSortMenuItem(SortOption.duration, 'Duration', libraryState.sortOption, accentColor),
+              _buildSortMenuItem(SortOption.dateAdded, 'Date Added', libraryState.sortOption, accentColor),
             ],
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppColors.neonOrange,
-          labelColor: AppColors.neonOrange,
+          indicatorColor: accentColor,
+          labelColor: accentColor,
           unselectedLabelColor: AppColors.textMuted,
           labelStyle: AppTypography.monoSmall.copyWith(fontWeight: FontWeight.bold),
           tabs: const [
@@ -111,6 +112,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     SortOption option,
     String label,
     SortOption current,
+    Color accentColor,
   ) {
     final isSelected = option == current;
     return PopupMenuItem(
@@ -119,7 +121,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: AppTypography.bodyMedium),
-          if (isSelected) const Icon(Icons.check, size: 18, color: AppColors.neonOrange),
+          if (isSelected) Icon(Icons.check, size: 18, color: accentColor),
         ],
       ),
     );
@@ -159,7 +161,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.bodyMedium.copyWith(
-              color: isPlayingThis ? AppColors.neonOrange : AppColors.textPrimary,
+              color: isPlayingThis ? ref.read(settingsNotifierProvider).accentColor : AppColors.textPrimary,
               fontWeight: isPlayingThis ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -211,11 +213,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                     },
                   ),
                   PopupMenuItem(
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.add_photo_alternate_outlined, color: AppColors.neonOrange, size: 18),
-                        SizedBox(width: 8),
-                        Text('Set Banner Image', style: TextStyle(color: Colors.white)),
+                        Icon(Icons.add_photo_alternate_outlined, color: ref.read(settingsNotifierProvider).accentColor, size: 18),
+                        const SizedBox(width: 8),
+                        const Text('Set Banner Image', style: TextStyle(color: Colors.white)),
                       ],
                     ),
                     onTap: () {
@@ -418,12 +420,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                             margin: const EdgeInsets.only(right: 8),
                             decoration: BoxDecoration(
                               color: i == safeFolderIndex
-                                  ? AppColors.neonOrange
+                                  ? ref.read(settingsNotifierProvider).accentColor
                                   : AppColors.surfaceElevated,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: i == safeFolderIndex
-                                    ? AppColors.neonOrange
+                                    ? ref.read(settingsNotifierProvider).accentColor
                                     : AppColors.borderSubtle,
                               ),
                             ),
@@ -517,7 +519,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                       tooltip: 'View-Master Reel Disc',
                       icon: Icon(
                         Icons.album_outlined,
-                        color: _isFolderDiscView ? AppColors.neonOrange : AppColors.textMuted,
+                        color: _isFolderDiscView ? ref.read(settingsNotifierProvider).accentColor : AppColors.textMuted,
                       ),
                       onPressed: () => setState(() => _isFolderDiscView = true),
                     ),
@@ -528,7 +530,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                       tooltip: 'VHS Spine List',
                       icon: Icon(
                         Icons.view_list_rounded,
-                        color: !_isFolderDiscView ? AppColors.neonOrange : AppColors.textMuted,
+                        color: !_isFolderDiscView ? ref.read(settingsNotifierProvider).accentColor : AppColors.textMuted,
                       ),
                       onPressed: () => setState(() => _isFolderDiscView = false),
                     ),

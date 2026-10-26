@@ -307,7 +307,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader('WALKMAN & MECHANICAL EXPERIENCE'),
           _buildCard([
             SwitchListTile(
-              activeThumbColor: AppColors.neonOrange,
+              activeThumbColor: settings.accentColor,
               title: Text('Mechanical Button Sounds', style: AppTypography.bodyMedium),
               subtitle: Text('Authentic mechanical clacks, latch snaps and switch clicks', style: AppTypography.bodySmall),
               value: settings.enableMechanicalSounds,
@@ -323,7 +323,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
-              activeThumbColor: AppColors.neonOrange,
+              activeThumbColor: settings.accentColor,
               title: Text('Cassette Load / Eject Sounds', style: AppTypography.bodyMedium),
               subtitle: Text('Plastic shell carriage slide, spring eject and seat click', style: AppTypography.bodySmall),
               value: settings.enableCassetteSounds,
@@ -331,7 +331,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
-              activeThumbColor: AppColors.neonOrange,
+              activeThumbColor: settings.accentColor,
               title: Text('Subtle Motor Ambience', style: AppTypography.bodyMedium),
               subtitle: Text('Faint analog capstan DC motor transport hum during playback', style: AppTypography.bodySmall),
               value: settings.enableMotorAmbience,
@@ -339,7 +339,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
-              activeThumbColor: AppColors.neonOrange,
+              activeThumbColor: settings.accentColor,
               title: Text('Tactile Haptic Feedback', style: AppTypography.bodyMedium),
               subtitle: Text('Physical vibration responses on button clicks and tape loading', style: AppTypography.bodySmall),
               value: settings.enableHaptics,
@@ -360,8 +360,8 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: AppColors.neonOrange,
-                      thumbColor: AppColors.parchment,
+                      activeTrackColor: settings.accentColor,
+                      thumbColor: settings.accentColor,
                       trackHeight: 3,
                     ),
                     child: Slider(
@@ -411,7 +411,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
-              activeThumbColor: AppColors.neonOrange,
+              activeThumbColor: settings.accentColor,
               title: Text('Reduced Animation', style: AppTypography.bodyMedium),
               subtitle: Text('Faster navigation, bypasses sliding carriage door sequence', style: AppTypography.bodySmall),
               value: settings.reducedAnimation,
@@ -425,7 +425,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader('LIBRARY & SCANNING'),
           _buildCard([
             ListTile(
-              leading: const Icon(Icons.sync_rounded, color: AppColors.neonOrange),
+              leading: Icon(Icons.sync_rounded, color: settings.accentColor),
               title: Text('Rescan Device Storage', style: AppTypography.bodyMedium),
               subtitle: Text('Search internal and external storage for audio tracks', style: AppTypography.bodySmall),
               onTap: () {
@@ -453,7 +453,7 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader('PLAYBACK & AUDIO ENGINE'),
           _buildCard([
             SwitchListTile(
-              activeThumbColor: AppColors.neonOrange,
+              activeThumbColor: settings.accentColor,
               title: Text('Gapless Playback', style: AppTypography.bodyMedium),
               subtitle: Text('Preload audio buffers for uninterrupted transitions', style: AppTypography.bodySmall),
               value: settings.gaplessPlayback,
@@ -654,7 +654,7 @@ class SettingsScreen extends ConsumerWidget {
                 final isSelected = settings.sleepTimerMinutes == mins;
                 return ListTile(
                   title: Text('$mins minutes', style: AppTypography.bodyMedium),
-                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.neonOrange) : null,
+                  trailing: isSelected ? Icon(Icons.check, color: settings.accentColor) : null,
                   onTap: () {
                     ref.read(settingsNotifierProvider.notifier).setSleepTimer(mins);
                     Navigator.of(context).pop();
@@ -703,7 +703,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add, color: AppColors.neonOrange),
+                    icon: Icon(Icons.add, color: settings.accentColor),
                     onPressed: () {
                       if (controller.text.trim().isNotEmpty) {
                         ref.read(settingsNotifierProvider.notifier).addExcludedFolder(controller.text.trim());

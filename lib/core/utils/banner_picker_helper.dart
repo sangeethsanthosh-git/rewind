@@ -37,6 +37,7 @@ class BannerPickerHelper {
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         builder: (dialogCtx) {
+          final accentColor = Theme.of(dialogCtx).primaryColor;
           return SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -58,7 +59,7 @@ class BannerPickerHelper {
                   Text(
                     'APPLY BANNER ARTWORK',
                     style: AppTypography.monoSmall.copyWith(
-                      color: AppColors.neonOrange,
+                      color: accentColor,
                       letterSpacing: 2,
                       fontWeight: FontWeight.bold,
                     ),
@@ -98,7 +99,7 @@ class BannerPickerHelper {
                             backgroundColor: AppColors.surfaceCard,
                             content: Text(
                               'Banner updated for "${track.title}"',
-                              style: AppTypography.monoSmall.copyWith(color: AppColors.neonOrange),
+                              style: AppTypography.monoSmall.copyWith(color: accentColor),
                             ),
                           ),
                         );

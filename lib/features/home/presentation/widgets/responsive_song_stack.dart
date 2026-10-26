@@ -479,9 +479,9 @@ class _Strip extends StatelessWidget {
                 color: Colors.black.withAlpha(180),
                 borderRadius: BorderRadius.circular(3),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.graphic_eq_rounded,
-                color: AppColors.neonOrange,
+                color: Theme.of(context).primaryColor,
                 size: 12,
               ),
             ),
@@ -788,8 +788,8 @@ class _Hud extends StatelessWidget {
                   children: [
                     Text(
                       '${idx + 1} / ${tracks.length}',
-                      style: const TextStyle(
-                        color: AppColors.neonOrange,
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
                         fontSize: 11,
                         letterSpacing: 1.4,
                         fontFamily: 'Courier',

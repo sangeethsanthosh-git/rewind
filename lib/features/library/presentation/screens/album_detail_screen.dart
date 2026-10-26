@@ -21,6 +21,7 @@ class AlbumDetailScreen extends ConsumerWidget {
     final playbackState = ref.watch(playbackNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
+    final accentColor = settings.accentColor;
     final currentPlayingId = playbackState.currentTrack?.id;
 
     return Scaffold(
@@ -162,7 +163,7 @@ class AlbumDetailScreen extends ConsumerWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.all(12),
                     ),
-                    icon: const Icon(Icons.shuffle, color: AppColors.neonOrange),
+                    icon: Icon(Icons.shuffle, color: accentColor),
                     tooltip: 'Shuffle Album',
                     onPressed: () {
                       if (album.tracks.isNotEmpty) {
@@ -193,7 +194,7 @@ class AlbumDetailScreen extends ConsumerWidget {
                     child: Text(
                       '${track.trackNumber ?? (index + 1)}',
                       style: AppTypography.monoSmall.copyWith(
-                        color: isCurrent ? AppColors.neonOrange : AppColors.textMuted,
+                        color: isCurrent ? accentColor : AppColors.textMuted,
                       ),
                     ),
                   ),
@@ -202,7 +203,7 @@ class AlbumDetailScreen extends ConsumerWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.bodyMedium.copyWith(
-                      color: isCurrent ? AppColors.neonOrange : AppColors.textPrimary,
+                      color: isCurrent ? accentColor : AppColors.textPrimary,
                       fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
                     ),
                   ),
@@ -217,9 +218,9 @@ class AlbumDetailScreen extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isCurrent && playbackState.isPlaying)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 8),
-                          child: Icon(Icons.graphic_eq, color: AppColors.neonOrange, size: 20),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Icon(Icons.graphic_eq, color: accentColor, size: 20),
                         ),
                       IconButton(
                         icon: const Icon(Icons.playlist_add_rounded, size: 20, color: AppColors.tapeAmber),

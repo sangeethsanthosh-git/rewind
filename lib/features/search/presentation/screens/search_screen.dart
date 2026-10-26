@@ -30,6 +30,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final searchState = ref.watch(searchNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
+    final accentColor = settings.accentColor;
 
     return Scaffold(
       backgroundColor: themePalette.background,
@@ -53,7 +54,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               decoration: InputDecoration(
                 hintText: 'Search songs, artists, albums...',
                 hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-                prefixIcon: const Icon(Icons.search, color: AppColors.neonOrange),
+                prefixIcon: Icon(Icons.search, color: accentColor),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear, color: AppColors.textMuted),
@@ -73,7 +74,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.neonOrange, width: 1.2),
+                  borderSide: BorderSide(color: accentColor, width: 1.2),
                 ),
               ),
               onChanged: (query) {
@@ -86,7 +87,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           // Search Results
           Expanded(
             child: searchState.isSearching
-                ? const Center(child: CircularProgressIndicator(color: AppColors.neonOrange))
+                ? Center(child: CircularProgressIndicator(color: accentColor))
                 : searchState.query.isEmpty
                     ? _buildSearchPrompt()
                     : searchState.results.isEmpty

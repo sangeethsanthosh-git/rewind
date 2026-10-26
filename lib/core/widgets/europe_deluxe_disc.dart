@@ -146,6 +146,7 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
             : (activeFolder != null ? _getRepresentativeTrack(activeFolder) : null);
 
         return LayoutBuilder(builder: (context, box) {
+          final accentColor = Theme.of(context).primaryColor;
           final size = box.biggest;
           final center = Offset(size.width / 2, size.height / 2);
           final d = math.min(
@@ -186,13 +187,13 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
                         Container(
                           padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: AppColors.neonOrange.withAlpha(35),
+                            color: accentColor.withAlpha(35),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.neonOrange.withAlpha(120), width: 0.8),
+                            border: Border.all(color: accentColor.withAlpha(120), width: 0.8),
                           ),
                           child: Icon(
                             isFolderMode ? Icons.folder_rounded : Icons.album_rounded,
-                            color: AppColors.neonOrange,
+                            color: accentColor,
                             size: 18,
                           ),
                         ),
@@ -232,18 +233,18 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
                         if (activeFolder != null) ...[
                           TextButton.icon(
                             style: TextButton.styleFrom(
-                              backgroundColor: AppColors.neonOrange.withAlpha(40),
+                              backgroundColor: accentColor.withAlpha(40),
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
-                                side: const BorderSide(color: AppColors.neonOrange, width: 1.0),
+                                side: BorderSide(color: accentColor, width: 1.0),
                               ),
                             ),
-                            icon: const Icon(Icons.folder_open_rounded, size: 14, color: AppColors.neonOrange),
+                            icon: Icon(Icons.folder_open_rounded, size: 14, color: accentColor),
                             label: Text(
                               'OPEN',
                               style: AppTypography.monoSmall.copyWith(
-                                color: AppColors.neonOrange,
+                                color: accentColor,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 10,
                               ),
@@ -378,7 +379,7 @@ class _EuropeDeluxeDiscState extends State<EuropeDeluxeDisc>
                               padding: const EdgeInsets.all(6),
                               constraints: const BoxConstraints(),
                               tooltip: 'Change Scenic Backdrop Image',
-                              icon: const Icon(Icons.wallpaper_rounded, color: AppColors.neonOrange),
+                              icon: Icon(Icons.wallpaper_rounded, color: accentColor),
                               onPressed: _cycleBackdropScene,
                             ),
                             IconButton(
@@ -622,6 +623,7 @@ class _DiscWindow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = BorderRadius.circular(radius);
+    final accentColor = Theme.of(context).primaryColor;
 
     return GestureDetector(
       onTap: onTap,
@@ -629,13 +631,13 @@ class _DiscWindow extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: r,
           border: Border.all(
-            color: isActive ? AppColors.neonOrange : const Color(0x66000000),
+            color: isActive ? accentColor : const Color(0x66000000),
             width: isActive ? 2.5 : 1.5,
           ),
           boxShadow: [
             if (isActive)
               BoxShadow(
-                color: AppColors.neonOrange.withAlpha(160),
+                color: accentColor.withAlpha(160),
                 blurRadius: 10,
               ),
           ],
@@ -647,10 +649,10 @@ class _DiscWindow extends StatelessWidget {
             children: [
               if (folder != null) ...[
                 // Folder Image (From customArtPath or album artwork)
-                _buildFolderArtwork(folder!),
+                _buildFolderArtwork(context, folder!),
               ] else if (track != null) ...[
                 // Track Image
-                _buildTrackArtwork(track!),
+                _buildTrackArtwork(context, track!),
               ] else ...[
                 // Empty Window with stylized vintage graphic
                 CustomPaint(painter: _EmptyWindowPainter(index)),
@@ -741,7 +743,7 @@ class _DiscWindow extends StatelessWidget {
     );
   }
 
-  Widget _buildFolderArtwork(FolderModel folder) {
+  Widget _buildFolderArtwork(BuildContext context, FolderModel folder) {
     final repTrack = folder.tracks.firstWhere(
       (t) => t.customArtPath != null && t.customArtPath!.isNotEmpty && File(t.customArtPath!).existsSync(),
       orElse: () => folder.tracks.firstWhere(
@@ -756,7 +758,7 @@ class _DiscWindow extends StatelessWidget {
       return Image.file(
         File(repTrack.customArtPath!),
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+        errorBuilder: (context, error, stackTrace) => _buildFallback(context),
       );
     } else if (repTrack.albumId != null) {
       return ArtworkWidget(
@@ -767,17 +769,17 @@ class _DiscWindow extends StatelessWidget {
         artist: '${folder.trackCount} tracks',
       );
     }
-    return _buildFallback();
+    return _buildFallback(context);
   }
 
-  Widget _buildTrackArtwork(AudioTrack track) {
+  Widget _buildTrackArtwork(BuildContext context, AudioTrack track) {
     if (track.customArtPath != null &&
         track.customArtPath!.isNotEmpty &&
         File(track.customArtPath!).existsSync()) {
       return Image.file(
         File(track.customArtPath!),
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _buildFallback(),
+        errorBuilder: (context, error, stackTrace) => _buildFallback(context),
       );
     } else if (track.albumId != null) {
       return ArtworkWidget(
@@ -788,16 +790,17 @@ class _DiscWindow extends StatelessWidget {
         artist: track.artist,
       );
     }
-    return _buildFallback();
+    return _buildFallback(context);
   }
 
-  Widget _buildFallback() {
+  Widget _buildFallback(BuildContext context) {
+    final accentColor = Theme.of(context).primaryColor;
     return Container(
       color: const Color(0xFF22242B),
       child: Center(
         child: Icon(
           folder != null ? Icons.folder_rounded : Icons.music_note_rounded,
-          color: AppColors.neonOrange.withAlpha(160),
+          color: accentColor.withAlpha(160),
           size: 24,
         ),
       ),

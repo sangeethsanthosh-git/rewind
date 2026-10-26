@@ -14,7 +14,6 @@ import 'package:spool/core/widgets/analog_vu_meter.dart';
 import 'package:spool/core/widgets/artwork_widget.dart';
 import 'package:spool/core/widgets/cassette_tape_widget.dart';
 import 'package:spool/core/widgets/crt_waveform_visualizer.dart';
-import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
 import 'package:spool/features/audio_player/domain/playback_state.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
@@ -35,8 +34,8 @@ class NowPlayingScreen extends ConsumerStatefulWidget {
 }
 
 class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
-  NowPlayingVisualMode _visualMode = NowPlayingVisualMode.banner;
-  bool _isTransparentCassette = true;
+  NowPlayingVisualMode _visualMode = NowPlayingVisualMode.cassette;
+  bool _isTransparentCassette = false;
   double _dragPosition = 0.0;
   bool _isDragging = false;
   int _slideDirection = 1; // 1 for next (leftwards), -1 for prev (rightwards)
@@ -143,7 +142,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                           ),
                           // Walkman Chassis Mode
                           IconButton(
-                            icon: const Icon(Icons.radio_outlined, color: AppColors.neonOrange, size: 22),
+                            icon: Icon(Icons.radio_outlined, color: settings.accentColor, size: 22),
                             tooltip: 'Open Walkman Chassis',
                             onPressed: () {
                               MechanicalSoundService.instance.playMechanicalSound(
@@ -173,9 +172,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildModeTab('BANNER', NowPlayingVisualMode.banner, Icons.image_outlined),
-                  _buildModeTab('CASSETTE', NowPlayingVisualMode.cassette, Icons.subtitles_outlined),
-                  _buildModeTab('OSCILLO', NowPlayingVisualMode.crtOscilloscope, Icons.graphic_eq_rounded),
+                  _buildModeTab('BANNER', NowPlayingVisualMode.banner, Icons.image_outlined, settings.accentColor),
+                  _buildModeTab('CASSETTE', NowPlayingVisualMode.cassette, Icons.subtitles_outlined, settings.accentColor),
+                  _buildModeTab('OSCILLO', NowPlayingVisualMode.crtOscilloscope, Icons.graphic_eq_rounded, settings.accentColor),
                 ],
               ),
             ),
@@ -361,7 +360,8 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     data: SliderTheme.of(context).copyWith(
                       trackHeight: 3.5,
                       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                      activeTrackColor: AppColors.neonOrange,
+                      activeTrackColor: settings.accentColor,
+                      thumbColor: settings.accentColor,
                       inactiveTrackColor: AppColors.surfaceElevated,
                     ),
                     child: Slider(
@@ -413,7 +413,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.shuffle,
-                      color: playbackState.isShuffleEnabled ? AppColors.neonOrange : AppColors.textMuted,
+                      color: playbackState.isShuffleEnabled ? settings.accentColor : AppColors.textMuted,
                       size: 22,
                     ),
                     onPressed: () {
@@ -451,11 +451,11 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       width: 66,
                       height: 66,
                       decoration: BoxDecoration(
-                        color: AppColors.parchment,
+                        color: settings.accentColor,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.neonOrange.withAlpha(70),
+                            color: settings.accentColor.withAlpha(100),
                             blurRadius: 18,
                             offset: const Offset(0, 6),
                           ),
@@ -464,7 +464,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       child: Center(
                         child: Icon(
                           playbackState.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                          color: AppColors.textOnCream,
+                          color: settings.accentColor.computeLuminance() > 0.6
+                              ? Colors.black
+                              : Colors.white,
                           size: 38,
                         ),
                       ),
@@ -488,7 +490,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       playbackState.repeatMode == LoopMode.one
                           ? Icons.repeat_one_rounded
                           : Icons.repeat_rounded,
-                      color: playbackState.repeatMode != LoopMode.off ? AppColors.neonOrange : AppColors.textMuted,
+                      color: playbackState.repeatMode != LoopMode.off ? settings.accentColor : AppColors.textMuted,
                       size: 22,
                     ),
                     onPressed: () {
@@ -593,7 +595,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
     return Container(color: themePalette.background);
   }
 
-  Widget _buildModeTab(String label, NowPlayingVisualMode mode, IconData icon) {
+  Widget _buildModeTab(String label, NowPlayingVisualMode mode, IconData icon, Color accentColor) {
     final isSelected = _visualMode == mode;
     return GestureDetector(
       onTap: () {
@@ -602,32 +604,12 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
           MechanicalSoundType.skipClick,
           settings: settings,
         );
-        if (mode == NowPlayingVisualMode.cassette) {
-          final playbackState = ref.read(playbackNotifierProvider);
-          final currentTrack = playbackState.currentTrack;
-          if (currentTrack != null) {
-            final queue = playbackState.queue;
-            final index = queue.indexWhere((t) => t.id == currentTrack.id);
-            final song = Song.fromAudioTrack(currentTrack, index >= 0 ? index : 0);
-            Navigator.of(context).push(PageRouteBuilder(
-              transitionDuration: const Duration(milliseconds: 450),
-              reverseTransitionDuration: const Duration(milliseconds: 350),
-              pageBuilder: (context, anim, secAnim) => CassettePage(
-                song: song,
-                allTracks: queue.isNotEmpty ? queue : [currentTrack],
-              ),
-              transitionsBuilder: (context, a, secAnim, child) =>
-                  FadeTransition(opacity: a, child: child),
-            ));
-            return;
-          }
-        }
         setState(() => _visualMode = mode);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.neonOrange : Colors.transparent,
+          color: isSelected ? accentColor : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -636,13 +618,17 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
             Icon(
               icon,
               size: 14,
-              color: isSelected ? Colors.white : AppColors.textMuted,
+              color: isSelected
+                  ? (accentColor.computeLuminance() > 0.6 ? Colors.black : Colors.white)
+                  : AppColors.textMuted,
             ),
             const SizedBox(width: 4),
             Text(
               label,
               style: AppTypography.monoSmall.copyWith(
-                color: isSelected ? Colors.white : AppColors.textMuted,
+                color: isSelected
+                    ? (accentColor.computeLuminance() > 0.6 ? Colors.black : Colors.white)
+                    : AppColors.textMuted,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 10,
               ),
@@ -659,6 +645,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
     Duration position,
     Duration duration,
   ) {
+    final settings = ref.watch(settingsNotifierProvider);
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableH = constraints.maxHeight;
@@ -685,6 +672,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     position: position,
                     duration: duration,
                     isTransparentShell: _isTransparentCassette,
+                    accentColor: settings.accentColor,
                     labelColor: AppColors.spinePalette[track.title.hashCode.abs() % AppColors.spinePalette.length],
                   ),
                 ),
@@ -764,22 +752,10 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
               ),
             ),
           ),
-          // Banner Artwork - tapping banner opens realistic cassette opening animation
+          // Banner Artwork - tapping switches view to photo-realistic cassette
           GestureDetector(
             onTap: () {
-              final queue = ref.read(playbackNotifierProvider).queue;
-              final index = queue.indexWhere((t) => t.id == track.id);
-              final song = Song.fromAudioTrack(track, index >= 0 ? index : 0);
-              Navigator.of(context).push(PageRouteBuilder(
-                transitionDuration: const Duration(milliseconds: 450),
-                reverseTransitionDuration: const Duration(milliseconds: 350),
-                pageBuilder: (context, anim, secAnim) => CassettePage(
-                  song: song,
-                  allTracks: queue.isNotEmpty ? queue : [track],
-                ),
-                transitionsBuilder: (context, a, secAnim, child) =>
-                    FadeTransition(opacity: a, child: child),
-              ));
+              setState(() => _visualMode = NowPlayingVisualMode.cassette);
             },
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
@@ -838,6 +814,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
   }
 
   void _showQueueModal(BuildContext context, SpoolPlaybackState playbackState) {
+    final settings = ref.read(settingsNotifierProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.darkCharcoal,
@@ -878,14 +855,14 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       leading: Text(
                         '${index + 1}',
                         style: AppTypography.monoSmall.copyWith(
-                          color: isCurrent ? AppColors.neonOrange : AppColors.textMuted,
+                          color: isCurrent ? settings.accentColor : AppColors.textMuted,
                         ),
                       ),
                       title: Text(
                         item.title,
                         maxLines: 1,
                         style: AppTypography.bodyMedium.copyWith(
-                          color: isCurrent ? AppColors.neonOrange : AppColors.textPrimary,
+                          color: isCurrent ? settings.accentColor : AppColors.textPrimary,
                           fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),

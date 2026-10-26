@@ -87,12 +87,12 @@ class _AddToTapeContentState extends ConsumerState<_AddToTapeContent> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.radio_outlined, color: AppColors.neonOrange, size: 18),
+                        Icon(Icons.radio_outlined, color: Theme.of(context).primaryColor, size: 18),
                         const SizedBox(width: 8),
                         Text(
                           'RECORD TO TAPE',
                           style: AppTypography.monoSmall.copyWith(
-                            color: AppColors.neonOrange,
+                            color: Theme.of(context).primaryColor,
                             letterSpacing: 2,
                             fontWeight: FontWeight.bold,
                           ),
@@ -348,7 +348,7 @@ class _AddToTapeContentState extends ConsumerState<_AddToTapeContent> {
                             Text(
                               'RECORD',
                               style: AppTypography.monoSmall.copyWith(
-                                color: AppColors.neonOrange,
+                                color: Theme.of(context).primaryColor,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),

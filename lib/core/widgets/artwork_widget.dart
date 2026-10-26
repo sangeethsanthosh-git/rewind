@@ -40,16 +40,16 @@ class ArtworkWidget extends StatelessWidget {
             width: size,
             height: size,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => _buildFallbackQuery(),
+            errorBuilder: (context, error, stackTrace) => _buildFallbackQuery(context),
           ),
         );
       }
     }
 
-    return _buildFallbackQuery();
+    return _buildFallbackQuery(context);
   }
 
-  Widget _buildFallbackQuery() {
+  Widget _buildFallbackQuery(BuildContext context) {
     if (id != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -60,16 +60,16 @@ class ArtworkWidget extends StatelessWidget {
           artworkHeight: size,
           artworkFit: BoxFit.cover,
           artworkBorder: BorderRadius.circular(borderRadius),
-          nullArtworkWidget: _buildAlbumFallback(),
-          errorBuilder: (context, error, stackTrace) => _buildAlbumFallback(),
+          nullArtworkWidget: _buildAlbumFallback(context),
+          errorBuilder: (context, error, stackTrace) => _buildAlbumFallback(context),
         ),
       );
     }
 
-    return _buildAlbumFallback();
+    return _buildAlbumFallback(context);
   }
 
-  Widget _buildAlbumFallback() {
+  Widget _buildAlbumFallback(BuildContext context) {
     if (albumId != null && (type != ArtworkType.ALBUM || id != albumId)) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -80,15 +80,15 @@ class ArtworkWidget extends StatelessWidget {
           artworkHeight: size,
           artworkFit: BoxFit.cover,
           artworkBorder: BorderRadius.circular(borderRadius),
-          nullArtworkWidget: _buildPlaceholder(),
-          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+          nullArtworkWidget: _buildPlaceholder(context),
+          errorBuilder: (context, error, stackTrace) => _buildPlaceholder(context),
         ),
       );
     }
-    return _buildPlaceholder();
+    return _buildPlaceholder(context);
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(BuildContext context) {
     final hash = title.hashCode.abs();
     final accentColor = AppColors.spinePalette[hash % AppColors.spinePalette.length];
 
@@ -150,7 +150,7 @@ class ArtworkWidget extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.surfaceCard.withAlpha(220),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.neonOrange, width: 1.2),
+                      border: Border.all(color: Theme.of(context).primaryColor, width: 1.2),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withAlpha(140),
@@ -161,12 +161,12 @@ class ArtworkWidget extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.add_photo_alternate_outlined, color: AppColors.neonOrange, size: 16),
+                        Icon(Icons.add_photo_alternate_outlined, color: Theme.of(context).primaryColor, size: 16),
                         const SizedBox(width: 6),
                         Text(
                           'ADD BANNER',
                           style: AppTypography.monoSmall.copyWith(
-                            color: AppColors.neonOrange,
+                            color: Theme.of(context).primaryColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 11,
                           ),

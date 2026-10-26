@@ -207,6 +207,8 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     final progress = duration.inMilliseconds > 0
         ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
+    final settings = ref.watch(settingsNotifierProvider);
+    final accentColor = settings.accentColor;
 
     return GestureDetector(
       onTap: () {
@@ -254,7 +256,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                         height: 42,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.neonOrange.withAlpha(120), width: 1.0),
+                          border: Border.all(color: accentColor.withAlpha(120), width: 1.0),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withAlpha(140),
@@ -300,12 +302,12 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                             decoration: BoxDecoration(
                               color: Colors.black.withAlpha(220),
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.neonOrange, width: 0.8),
+                              border: Border.all(color: accentColor, width: 0.8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.add_photo_alternate_rounded,
                               size: 10,
-                              color: AppColors.neonOrange,
+                              color: accentColor,
                             ),
                           ),
                         ),
@@ -391,7 +393,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                         constraints: const BoxConstraints(),
                         icon: Icon(
                           isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
-                          color: AppColors.neonOrange,
+                          color: accentColor,
                         ),
                         onPressed: () {
                           final settings = ref.read(settingsNotifierProvider);
@@ -429,7 +431,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                 value: progress,
                 minHeight: 2.0,
                 backgroundColor: Colors.white10,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.neonOrange),
+                valueColor: AlwaysStoppedAnimation<Color>(accentColor),
               ),
             ),
           ],

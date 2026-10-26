@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'core/constants/app_theme.dart';
 import 'core/database/app_database.dart';
+import 'features/settings/presentation/providers/settings_provider.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
 
 Future<void> main() async {
@@ -46,15 +47,16 @@ Future<void> main() async {
   );
 }
 
-class RewindApp extends StatelessWidget {
+class RewindApp extends ConsumerWidget {
   const RewindApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsNotifierProvider);
     return MaterialApp(
       title: 'Rewind',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.getTheme(accentColor: settings.accentColor),
       home: const SplashScreen(),
     );
   }
