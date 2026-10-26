@@ -36,8 +36,12 @@ class AppSettings {
   final MechanicalSoundProfile soundProfile;
   final bool reducedAnimation;
   final bool walkmanMode;
+  final String walkmanChassisTheme;
+  final String walkmanBrandingText;
+  final int walkmanHotlineColorValue;
 
   Color get accentColor => Color(accentColorValue);
+  Color get walkmanHotlineColor => Color(walkmanHotlineColorValue);
 
   const AppSettings({
     this.themeMode = AppThemeMode.dark,
@@ -60,6 +64,9 @@ class AppSettings {
     this.soundProfile = MechanicalSoundProfile.classic,
     this.reducedAnimation = false,
     this.walkmanMode = false,
+    this.walkmanChassisTheme = 'classicBlue',
+    this.walkmanBrandingText = 'SONY',
+    this.walkmanHotlineColorValue = 0xFFF08A1C,
   });
 
   AppSettings copyWith({
@@ -85,6 +92,9 @@ class AppSettings {
     MechanicalSoundProfile? soundProfile,
     bool? reducedAnimation,
     bool? walkmanMode,
+    String? walkmanChassisTheme,
+    String? walkmanBrandingText,
+    int? walkmanHotlineColorValue,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -109,6 +119,9 @@ class AppSettings {
       soundProfile: soundProfile ?? this.soundProfile,
       reducedAnimation: reducedAnimation ?? this.reducedAnimation,
       walkmanMode: walkmanMode ?? this.walkmanMode,
+      walkmanChassisTheme: walkmanChassisTheme ?? this.walkmanChassisTheme,
+      walkmanBrandingText: walkmanBrandingText ?? this.walkmanBrandingText,
+      walkmanHotlineColorValue: walkmanHotlineColorValue ?? this.walkmanHotlineColorValue,
     );
   }
 
@@ -127,6 +140,9 @@ class AppSettings {
       'soundProfile': soundProfile.name,
       'reducedAnimation': reducedAnimation ? '1' : '0',
       'walkmanMode': walkmanMode ? '1' : '0',
+      'walkmanChassisTheme': walkmanChassisTheme,
+      'walkmanBrandingText': walkmanBrandingText,
+      'walkmanHotlineColorValue': walkmanHotlineColorValue.toString(),
       'gaplessPlayback': gaplessPlayback ? '1' : '0',
       'excludedFolders': excludedFolders.join('|'),
     };
@@ -178,6 +194,15 @@ class AppSettings {
       walkmanMode: map.containsKey('walkmanMode')
           ? map['walkmanMode'] == '1'
           : defaults.walkmanMode,
+      walkmanChassisTheme: map.containsKey('walkmanChassisTheme')
+          ? map['walkmanChassisTheme']!
+          : defaults.walkmanChassisTheme,
+      walkmanBrandingText: map.containsKey('walkmanBrandingText')
+          ? map['walkmanBrandingText']!
+          : defaults.walkmanBrandingText,
+      walkmanHotlineColorValue: map.containsKey('walkmanHotlineColorValue')
+          ? (int.tryParse(map['walkmanHotlineColorValue']!) ?? defaults.walkmanHotlineColorValue)
+          : defaults.walkmanHotlineColorValue,
       gaplessPlayback: map.containsKey('gaplessPlayback')
           ? map['gaplessPlayback'] == '1'
           : defaults.gaplessPlayback,

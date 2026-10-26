@@ -13,8 +13,10 @@ enum MechanicalSoundType {
 
 class MechanicalSoundService {
   static final MechanicalSoundService instance = MechanicalSoundService._init();
+  static const MethodChannel _nativeChannel = MethodChannel('com.antigravity.rewind/sound_effects');
 
   int _lastPlayTimeMs = 0;
+  bool _isMotorHumming = false;
 
   MechanicalSoundService._init();
 
@@ -38,18 +40,47 @@ class MechanicalSoundService {
     _triggerHaptic(type, settings);
 
     if (settings.enableMechanicalSounds) {
-      // Throttle duplicate clicks under 35ms to avoid congestion
       final now = DateTime.now().millisecondsSinceEpoch;
-      if (now - _lastPlayTimeMs < 35 && type == MechanicalSoundType.skipClick) {
+      if (now - _lastPlayTimeMs < 40 && type == MechanicalSoundType.skipClick) {
         return;
       }
       _lastPlayTimeMs = now;
 
-      // Play system click to provide tactile audio feedback without violating
-      // just_audio_background's single-instance restriction
+      final soundName = _getSoundName(type);
+      final double volume = settings.uiSoundVolume.clamp(0.0, 1.0);
+
       try {
-        SystemSound.play(SystemSoundType.click);
-      } catch (_) {}
+        final played = await _nativeChannel.invokeMethod<bool>('playSound', {
+          'name': soundName,
+          'volume': volume,
+        });
+
+        if (played != true) {
+          SystemSound.play(SystemSoundType.click);
+        }
+      } catch (_) {
+        // Fallback for non-Android platforms or tests
+        try {
+          SystemSound.play(SystemSoundType.click);
+        } catch (_) {}
+      }
+    }
+  }
+
+  String _getSoundName(MechanicalSoundType type) {
+    switch (type) {
+      case MechanicalSoundType.playClack:
+        return 'play_clack';
+      case MechanicalSoundType.pauseClick:
+        return 'pause_click';
+      case MechanicalSoundType.skipClick:
+        return 'skip_click';
+      case MechanicalSoundType.cassetteInsert:
+        return 'cassette_insert';
+      case MechanicalSoundType.cassetteEject:
+        return 'cassette_eject';
+      case MechanicalSoundType.doorLatch:
+        return 'door_latch';
     }
   }
 
@@ -76,8 +107,30 @@ class MechanicalSoundService {
     required bool isPlayingMusic,
     required AppSettings settings,
   }) async {
-    // No-op to preserve single AudioPlayer instance requirement of just_audio_background
+    if (!settings.enableMotorAmbience || !isPlayingMusic) {
+      if (_isMotorHumming) {
+        _isMotorHumming = false;
+        try {
+          await _nativeChannel.invokeMethod('stopMotorHum');
+        } catch (_) {}
+      }
+      return;
+    }
+
+    if (isPlayingMusic && !_isMotorHumming) {
+      _isMotorHumming = true;
+      try {
+        await _nativeChannel.invokeMethod('startMotorHum', {
+          'volume': (settings.uiSoundVolume * 0.35).clamp(0.05, 0.6),
+        });
+      } catch (_) {}
+    }
   }
 
-  void dispose() {}
+  void dispose() {
+    if (_isMotorHumming) {
+      _nativeChannel.invokeMethod('stopMotorHum').catchError((_) => null);
+      _isMotorHumming = false;
+    }
+  }
 }

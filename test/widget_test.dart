@@ -7,6 +7,7 @@ import 'package:spool/core/widgets/europe_deluxe_disc.dart';
 import 'package:spool/core/widgets/realistic_cassette_opening_modal.dart';
 import 'package:spool/core/widgets/retro_walkman_widget.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
+import 'package:spool/features/audio_player/presentation/screens/walkman_player_screen.dart';
 import 'package:spool/features/home/presentation/screens/home_screen.dart';
 import 'package:spool/features/library/domain/folder_model.dart';
 import 'package:spool/features/library/presentation/screens/folders_screen.dart';
@@ -308,5 +309,35 @@ void main() {
     expect(find.text('Bethlehem Kudumba Unit'), findsOneWidget);
     expect(find.text('SIDE A'), findsOneWidget);
     expect(find.text('100 • 50 • 0'), findsOneWidget);
+  });
+
+  testWidgets('WalkmanPlayerScreen renders 3D hinged door, spools, tactile keys and customizer modal', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: WalkmanPlayerScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.byType(WalkmanPlayerScreen), findsOneWidget);
+    expect(find.text('PORTABLE STEREO CASSETTE PLAYER'), findsOneWidget);
+    expect(find.text('SONY'), findsOneWidget);
+    expect(find.text('WALKMAN'), findsOneWidget);
+    expect(find.text('OPEN'), findsOneWidget);
+    expect(find.text('PLAY'), findsOneWidget);
+    expect(find.text('STOP'), findsOneWidget);
+    expect(find.text('REW'), findsOneWidget);
+    expect(find.text('FF'), findsOneWidget);
+    expect(find.byIcon(Icons.palette_outlined), findsOneWidget);
+
+    // Open Customizer Modal
+    await tester.tap(find.byIcon(Icons.palette_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('WALKMAN CUSTOMIZER'), findsOneWidget);
+    expect(find.text('Classic TPS-L2'), findsOneWidget);
+    expect(find.text('Solar Yellow'), findsOneWidget);
+    expect(find.text('Stealth Black'), findsOneWidget);
   });
 }

@@ -125,6 +125,21 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     _persistSettings();
   }
 
+  void setWalkmanChassisTheme(String theme) {
+    state = state.copyWith(walkmanChassisTheme: theme);
+    _persistSettings();
+  }
+
+  void setWalkmanBrandingText(String text) {
+    state = state.copyWith(walkmanBrandingText: text.trim().isEmpty ? 'SONY' : text.trim());
+    _persistSettings();
+  }
+
+  void setWalkmanHotlineColor(Color color) {
+    state = state.copyWith(walkmanHotlineColorValue: color.toARGB32());
+    _persistSettings();
+  }
+
   void addExcludedFolder(String folder) {
     if (!state.excludedFolders.contains(folder)) {
       state = state.copyWith(

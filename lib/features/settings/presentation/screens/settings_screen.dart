@@ -10,6 +10,7 @@ import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
 import 'package:spool/features/collections/presentation/providers/collections_provider.dart';
 import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
+import 'package:spool/features/audio_player/presentation/screens/walkman_player_screen.dart';
 import 'package:spool/features/settings/domain/app_settings.dart';
 import 'package:spool/features/settings/presentation/screens/codec_diagnostics_screen.dart';
 
@@ -306,6 +307,22 @@ class SettingsScreen extends ConsumerWidget {
           // Section: Walkman & Mechanical Experience
           _buildSectionHeader('WALKMAN & MECHANICAL EXPERIENCE'),
           _buildCard([
+            ListTile(
+              leading: Icon(Icons.radio_outlined, color: settings.accentColor),
+              title: Text('Launch Walkman Mode', style: AppTypography.bodyMedium),
+              subtitle: Text('Interactive 3D chassis with hinged lid, tactile keys & spools', style: AppTypography.bodySmall),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white54),
+              onTap: () {
+                MechanicalSoundService.instance.playMechanicalSound(
+                  MechanicalSoundType.doorLatch,
+                  settings: settings,
+                );
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const WalkmanPlayerScreen()),
+                );
+              },
+            ),
+            const Divider(color: AppColors.borderSubtle, height: 1),
             SwitchListTile(
               activeThumbColor: settings.accentColor,
               title: Text('Mechanical Button Sounds', style: AppTypography.bodyMedium),

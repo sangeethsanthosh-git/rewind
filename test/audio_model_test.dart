@@ -121,6 +121,9 @@ void main() {
         enableCassetteSounds: true,
         enableMotorAmbience: true,
         enableHaptics: false,
+        walkmanChassisTheme: 'solarYellow',
+        walkmanBrandingText: 'TPS-L2',
+        walkmanHotlineColorValue: 0xFFFFD60A,
       );
 
       final map = original.toPersistenceMap();
@@ -134,6 +137,9 @@ void main() {
       expect(restored.enableCassetteSounds, isTrue);
       expect(restored.enableMotorAmbience, isTrue);
       expect(restored.enableHaptics, isFalse);
+      expect(restored.walkmanChassisTheme, 'solarYellow');
+      expect(restored.walkmanBrandingText, 'TPS-L2');
+      expect(restored.walkmanHotlineColorValue, 0xFFFFD60A);
     });
   });
 }
