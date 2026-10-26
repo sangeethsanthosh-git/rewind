@@ -5,17 +5,29 @@ import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
 import 'package:spool/core/services/mechanical_sound_service.dart';
 import 'package:spool/core/utils/formatters.dart';
+import 'package:spool/core/widgets/artwork_widget.dart';
+import 'package:spool/features/audio_player/domain/audio_track.dart';
 import 'package:spool/features/audio_player/domain/playback_state.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
 import 'package:spool/features/library/presentation/providers/library_provider.dart';
 import 'package:spool/features/settings/domain/app_settings.dart';
 import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
 
-/// Interactive Realistic Walkman Player with 3D Hinged Door, Dual Spindles,
-/// Sliding Cassette, Right Tactile Metallic Keys, Vintage LCD Tape Counter,
-/// and Deep Customization.
+/// Interactive Realistic Walkman Player with:
+/// 1. 3D Hinged Lid with 100% Transparent Acrylic Glass Window
+/// 2. Cassette Jewel Case Opening & Tape Slide Animation
+/// 3. Cassette Tape displaying real Album Cover Image & Spinning Spools
+/// 4. Right Tactile Metallic Mechanical Keys with Hardware SoundPool clicks
+/// 5. Vintage LCD Tape Counter & Deep Walkman Customization
 class WalkmanPlayerScreen extends ConsumerStatefulWidget {
-  const WalkmanPlayerScreen({super.key});
+  final bool isNavbarTab;
+  final VoidCallback? onNavigateHome;
+
+  const WalkmanPlayerScreen({
+    super.key,
+    this.isNavbarTab = false,
+    this.onNavigateHome,
+  });
 
   @override
   ConsumerState<WalkmanPlayerScreen> createState() => _WalkmanPlayerScreenState();
@@ -24,14 +36,17 @@ class WalkmanPlayerScreen extends ConsumerStatefulWidget {
 class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     with TickerProviderStateMixin {
   // Step State:
-  // 0: Lid Closed, Cassette Out
-  // 1: Lid Open, Cassette Out
-  // 2: Lid Open, Cassette In
-  // 3: Lid Closed, Cassette In (Playback Ready / Active)
-  int _step = 3; // Default to loaded & ready if song is active, otherwise 0
+  // 0: Walkman closed, Cassette in closed Jewel Case below
+  // 1: Walkman open, Cassette Case open, Cassette ready
+  // 2: Walkman open, Cassette loaded in Bay (rotated 90 deg)
+  // 3: Walkman closed, Cassette loaded & visible through transparent glass
+  int _step = 3;
 
   late final AnimationController _lidAnimController;
   late final Animation<double> _lidAnimation;
+
+  late final AnimationController _caseLidAnimController;
+  late final Animation<double> _caseLidAnimation;
 
   late final AnimationController _cassetteAnimController;
   late final Animation<double> _cassetteProgress;
@@ -45,17 +60,16 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     super.initState();
 
     final playbackState = ref.read(playbackNotifierProvider);
-    // If track is playing or loaded, start at state 3 (loaded & ready)
     if (playbackState.currentTrack != null) {
       _step = 3;
     } else {
       _step = 0;
     }
 
-    // Lid Door Hinge Animation: 0.0 (closed) to -168 deg (-2.932 rad) (open)
+    // Walkman Lid Door Hinge: 0.0 (closed) to -168 deg (open)
     _lidAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 850),
     );
     _lidAnimation = Tween<double>(
       begin: 0.0,
@@ -65,10 +79,23 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
       curve: const Cubic(0.45, 0.0, 0.2, 1.1),
     ));
 
-    // Cassette Slide & Rotate Animation: 0.0 (ejected) to 1.0 (inserted & 90 deg)
+    // Cassette Jewel Case Hinge: 0.0 (closed) to -160 deg (open)
+    _caseLidAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 750),
+    );
+    _caseLidAnimation = Tween<double>(
+      begin: 0.0,
+      end: -160.0 * (math.pi / 180.0),
+    ).animate(CurvedAnimation(
+      parent: _caseLidAnimController,
+      curve: const Cubic(0.45, 0.0, 0.2, 1.1),
+    ));
+
+    // Cassette Slide & Rotate: 0.0 (in case) to 1.0 (in bay, rotated 90 deg)
     _cassetteAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 950),
+      duration: const Duration(milliseconds: 900),
     );
     _cassetteProgress = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _cassetteAnimController,
@@ -83,9 +110,11 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
 
     if (_step >= 2) {
       _cassetteAnimController.value = 1.0;
+      _caseLidAnimController.value = 1.0;
     }
     if (_step == 1 || _step == 2) {
       _lidAnimController.value = 1.0;
+      _caseLidAnimController.value = 1.0;
     }
 
     if (playbackState.isPlaying) {
@@ -96,6 +125,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
   @override
   void dispose() {
     _lidAnimController.dispose();
+    _caseLidAnimController.dispose();
     _cassetteAnimController.dispose();
     _reelSpinController.dispose();
     super.dispose();
@@ -123,23 +153,28 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
 
     setState(() => _step = targetStep);
 
-    // Sound and animation sequences matching the mechanical prototype
     if (targetStep == 1 && prev == 0) {
-      // Open lid from closed
+      // Open Walkman lid AND open Cassette Case lid
       MechanicalSoundService.instance.playMechanicalSound(
         MechanicalSoundType.doorLatch,
         settings: settings,
       );
-      await _lidAnimController.forward();
+      await Future.wait([
+        _lidAnimController.forward(),
+        _caseLidAnimController.forward(),
+      ]);
     } else if (targetStep == 0 && prev == 1) {
-      // Close lid with cassette out
-      await _lidAnimController.reverse();
+      // Close Cassette Case lid AND Walkman lid
+      await Future.wait([
+        _caseLidAnimController.reverse(),
+        _lidAnimController.reverse(),
+      ]);
       MechanicalSoundService.instance.playMechanicalSound(
         MechanicalSoundType.doorLatch,
         settings: settings,
       );
     } else if (targetStep == 2 && prev == 1) {
-      // Slide cassette in while lid is open
+      // Slide cassette out of case and into Walkman bay
       MechanicalSoundService.instance.playMechanicalSound(
         MechanicalSoundType.cassetteInsert,
         settings: settings,
@@ -150,21 +185,21 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
         settings: settings,
       );
     } else if (targetStep == 1 && prev == 2) {
-      // Eject cassette out
+      // Eject cassette from Walkman bay back into case
       MechanicalSoundService.instance.playMechanicalSound(
         MechanicalSoundType.cassetteEject,
         settings: settings,
       );
       await _cassetteAnimController.reverse();
     } else if (targetStep == 3 && prev == 2) {
-      // Close lid with cassette in
+      // Close Walkman lid over loaded cassette
       await _lidAnimController.reverse();
       MechanicalSoundService.instance.playMechanicalSound(
         MechanicalSoundType.doorLatch,
         settings: settings,
       );
     } else if (targetStep == 2 && prev == 3) {
-      // Open lid with cassette in
+      // Open Walkman lid with cassette loaded
       MechanicalSoundService.instance.playMechanicalSound(
         MechanicalSoundType.doorLatch,
         settings: settings,
@@ -285,7 +320,6 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
         );
       case 'classicBlue':
       default:
-        // Iconic Sony TPS-L2 Metallic Blue
         return const WalkmanThemeData(
           bodyGradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -335,7 +369,6 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Modal Header
                     Center(
                       child: Container(
                         width: 38,
@@ -366,7 +399,6 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                     ),
                     const SizedBox(height: 12),
 
-                    // Chassis Color / Finish
                     Text('CHASSIS FINISH', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                     const SizedBox(height: 8),
                     Wrap(
@@ -420,7 +452,6 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
 
                     const SizedBox(height: 18),
 
-                    // Branding Text Customization
                     Text('WALKMAN BRANDING', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                     const SizedBox(height: 8),
                     Row(
@@ -440,18 +471,17 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
 
                     const SizedBox(height: 18),
 
-                    // Hotline Tab Color
                     Text('HOTLINE TAB COLOR', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 12,
                       children: [
                         for (final color in [
-                          const Color(0xFFF08A1C), // Classic Hotline Orange
-                          const Color(0xFFFF3B30), // Red
-                          const Color(0xFF00C7BE), // Cyan
-                          const Color(0xFFFFD60A), // Gold
-                          curSettings.accentColor, // Universal Accent
+                          const Color(0xFFF08A1C),
+                          const Color(0xFFFF3B30),
+                          const Color(0xFF00C7BE),
+                          const Color(0xFFFFD60A),
+                          curSettings.accentColor,
                         ])
                           GestureDetector(
                             onTap: () {
@@ -481,7 +511,6 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
 
                     const SizedBox(height: 18),
 
-                    // Mechanical Sounds & Motor Ambience
                     Text('TACTILE AUDIO & HAPTICS', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                     const SizedBox(height: 6),
                     SwitchListTile(
@@ -583,18 +612,15 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
 
     _syncReelAnimation(playbackState.isPlaying);
 
-    // Update motor ambience on state change
     MechanicalSoundService.instance.updateMotorAmbience(
       isPlayingMusic: playbackState.isPlaying,
       settings: settings,
     );
 
-    // Calculate tape progress for tape spools
     final durationMs = playbackState.duration.inMilliseconds;
     final positionMs = playbackState.position.inMilliseconds;
     final double progress = durationMs > 0 ? (positionMs / durationMs).clamp(0.0, 1.0) : 0.0;
 
-    // Left and right tape pack diameters (in px)
     final double leftRadius = 22.0 - (10.0 * progress);
     final double rightRadius = 12.0 + (10.0 * progress);
 
@@ -603,21 +629,28 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Top Navigation & Tool Bar
+            // Top Navigation Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white70),
-                    tooltip: 'Back',
+                    icon: Icon(
+                      widget.isNavbarTab ? Icons.home_outlined : Icons.arrow_back,
+                      color: Colors.white70,
+                    ),
+                    tooltip: widget.isNavbarTab ? 'Home' : 'Back',
                     onPressed: () {
                       MechanicalSoundService.instance.playMechanicalSound(
                         MechanicalSoundType.pauseClick,
                         settings: settings,
                       );
-                      Navigator.of(context).pop();
+                      if (widget.isNavbarTab) {
+                        widget.onNavigateHome?.call();
+                      } else if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
                     },
                   ),
                   Text(
@@ -643,7 +676,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
               ),
             ),
 
-            // Walkman Realistic Stage Container (Scales gracefully via FittedBox)
+            // Walkman & Cassette Case Stage Container
             Expanded(
               child: Center(
                 child: FittedBox(
@@ -727,7 +760,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                   ),
                                 ),
 
-                                // Recessed Cassette Bay (Deep Interior Chamber)
+                                // Recessed Cassette Bay (Deep Chamber)
                                 Positioned(
                                   left: 20,
                                   top: 65,
@@ -749,13 +782,11 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                     ),
                                     child: Stack(
                                       children: [
-                                        // Spindle 1 (Upper Reel Spindle)
                                         Positioned(
                                           left: 102,
                                           top: 110,
                                           child: _buildBaySpindle(),
                                         ),
-                                        // Spindle 2 (Lower Reel Spindle)
                                         Positioned(
                                           left: 102,
                                           top: 240,
@@ -766,20 +797,43 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                   ),
                                 ),
 
+                                // Cassette Jewel Case (Displays album art cover in State 0 & 1)
+                                if (_step <= 1)
+                                  Positioned(
+                                    left: 20,
+                                    top: 290,
+                                    width: 220,
+                                    height: 140,
+                                    child: AnimatedBuilder(
+                                      animation: _caseLidAnimController,
+                                      builder: (context, _) {
+                                        return _buildCassetteCase(
+                                          track: track,
+                                          openAngle: _caseLidAnimation.value,
+                                          onTap: () {
+                                            if (_step == 0) {
+                                              _transitionToStep(1);
+                                            } else if (_step == 1) {
+                                              _transitionToStep(0);
+                                            }
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+
                                 // Animated Cassette Tape (Slides into the bay and rotates 90 deg)
                                 AnimatedBuilder(
                                   animation: _cassetteAnimController,
                                   builder: (context, child) {
                                     final t = _cassetteProgress.value;
-                                    // Interpolate translation & rotation:
-                                    // t=0 (ejected): x=0, y=270, rotation=0 deg
-                                    // t=1 (inserted): x=-10, y=105, rotation=90 deg
-                                    final currentY = 105.0 + (165.0 * (1.0 - t));
-                                    final currentX = -10.0 + (10.0 * (1.0 - t));
+                                    // t=0 (in jewel case): y=285, x=10, rot=0 deg
+                                    // t=1 (in walkman bay): y=135, x=10, rot=90 deg
+                                    final currentY = 285.0 - (150.0 * t);
                                     final currentAngle = (math.pi / 2) * t;
 
                                     return Positioned(
-                                      left: 20 + currentX,
+                                      left: 10,
                                       top: currentY,
                                       width: 240,
                                       height: 150,
@@ -807,7 +861,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                                   },
                                 ),
 
-                                // 3D Hinged Lid with Clear Window & "WALKMAN" Lettering
+                                // 3D Hinged Lid with 100% TRANSPARENT Acrylic Glass Window
                                 Positioned(
                                   left: 20,
                                   top: 65,
@@ -917,7 +971,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
               ),
             ),
 
-            // Lower Digital Control Panel (Vintage LCD, Status, Step Buttons, Volume)
+            // Lower Digital Control Panel
             _buildLowerControlPanel(
               settings: settings,
               playbackState: playbackState,
@@ -926,7 +980,6 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                 if (_step < 3) {
                   _transitionToStep(_step + 1);
                 } else {
-                  // Toggle Play/Stop
                   final isPlaying = playbackState.isPlaying;
                   MechanicalSoundService.instance.playMechanicalSound(
                     isPlaying ? MechanicalSoundType.pauseClick : MechanicalSoundType.playClack,
@@ -992,72 +1045,69 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     );
   }
 
+  /// 100% Transparent Acrylic Glass Window on Lid
   Widget _buildLidFront(WalkmanThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.lidFrontColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white24, width: 1.0),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black45,
-            blurRadius: 8,
-            offset: Offset(2, 4),
-          ),
-        ],
+    const windowRect = Rect.fromLTWH(16, 20, 188, 290);
+
+    return CustomPaint(
+      painter: LidCutoutPainter(
+        frameColor: theme.lidFrontColor,
+        windowRect: windowRect,
       ),
-      child: Stack(
-        children: [
-          // Clear Acrylic Inspection Window (.win)
-          Positioned(
-            left: 14,
-            top: 20,
-            right: 14,
-            bottom: 44,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.white.withAlpha(90), width: 1.8),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0x28FFFFFF),
-                    Color(0x05FFFFFF),
-                    Color(0x18FFFFFF),
-                  ],
-                  stops: [0.0, 0.4, 1.0],
+      child: SizedBox(
+        width: 220,
+        height: 380,
+        child: Stack(
+          children: [
+            // Transparent Acrylic Glass Reflection Sheen
+            Positioned.fromRect(
+              rect: windowRect,
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0x32FFFFFF),
+                        Color(0x06FFFFFF),
+                        Color(0x18FFFFFF),
+                      ],
+                      stops: [0.0, 0.4, 1.0],
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Italic Bold "WALKMAN" Lettering at bottom of lid
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 12,
-            child: Text(
-              'WALKMAN',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-                letterSpacing: 2.0,
-                color: Colors.white.withAlpha(240),
-                shadows: const [
-                  Shadow(
-                    color: Colors.black54,
-                    blurRadius: 4,
-                    offset: Offset(0, 1),
-                  ),
-                ],
+            // Bold Italic "WALKMAN" Lettering on the bottom frame
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 14,
+              child: Text(
+                'WALKMAN',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  letterSpacing: 2.0,
+                  color: Colors.white.withAlpha(240),
+                  shadows: const [
+                    Shadow(
+                      color: Colors.black54,
+                      blurRadius: 4,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1101,8 +1151,217 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     );
   }
 
+  /// Cassette Jewel Case with opening J-card cover
+  Widget _buildCassetteCase({
+    required AudioTrack? track,
+    required double openAngle,
+    required VoidCallback onTap,
+  }) {
+    final title = track?.title ?? 'Rewind Tape';
+    final artist = track?.artist ?? 'Analog Sound System';
+    final album = track?.album ?? 'Vintage Cassette';
+
+    final isFrontFacing = openAngle.abs() < (math.pi / 2);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 220,
+        height: 140,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // Base Tray
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1E2026), Color(0xFF101115)],
+                ),
+                border: Border.all(color: Colors.white24, width: 1.0),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 16,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+            ),
+
+            // Hinged J-Card Cover
+            Transform(
+              alignment: Alignment.centerLeft,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.0012)
+                ..rotateY(openAngle),
+              child: isFrontFacing
+                  ? _buildCaseCoverFront(track, title, artist, album)
+                  : _buildCaseCoverBack(title, artist, album),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCaseCoverFront(AudioTrack? track, String title, String artist, String album) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F222A),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white30, width: 1.2),
+        boxShadow: const [
+          BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(2, 4)),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Album Artwork Image covering J-card
+          if (track != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: ArtworkWidget(
+                id: track.albumId ?? int.tryParse(track.id),
+                customArtPath: track.customArtPath,
+                title: title,
+                artist: artist,
+                size: 220,
+                borderRadius: 5,
+              ),
+            )
+          else
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF2C3E50), Color(0xFF3498DB)],
+                ),
+              ),
+              child: const Icon(Icons.album, size: 64, color: Colors.white24),
+            ),
+
+          // Title & Artist Bottom Strip
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [Color(0xEE090A0D), Color(0x00090A0D)],
+                ),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'serif',
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    artist,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withAlpha(200),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Clear Acrylic Sheen Reflection
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0x35FFFFFF),
+                    Color(0x05FFFFFF),
+                    Color(0x18FFFFFF),
+                  ],
+                  stops: [0.0, 0.35, 1.0],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCaseCoverBack(String title, String artist, String album) {
+    return Transform(
+      alignment: Alignment.center,
+      transform: Matrix4.rotationY(math.pi),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF141519),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.white12),
+        ),
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'J-CARD INDEX',
+              style: AppTypography.monoSmall.copyWith(
+                color: AppColors.tapeAmber,
+                fontSize: 9,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              artist,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white70, fontSize: 10),
+            ),
+            Text(
+              album,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white38, fontSize: 9, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Photo-Realistic Cassette Tape with Song Album Image & Rotating Spool Hubs
   Widget _buildRealisticCassette({
-    required dynamic track,
+    required AudioTrack? track,
     required bool isPlaying,
     required double leftRadius,
     required double rightRadius,
@@ -1112,10 +1371,12 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     final artist = track?.artist ?? 'Analog Sound System';
 
     return Container(
+      width: 240,
+      height: 150,
       decoration: BoxDecoration(
         color: const Color(0xFF1B1C20),
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(color: Colors.white.withAlpha(20), width: 1.0),
+        border: Border.all(color: Colors.white.withAlpha(25), width: 1.0),
         boxShadow: const [
           BoxShadow(
             color: Color(0x66000000),
@@ -1132,121 +1393,132 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
           _buildScrew(left: 6, bottom: 6),
           _buildScrew(right: 6, bottom: 6),
 
-          // Vintage Paper Label
+          // Cassette Face Label with Album Artwork Image!
           Positioned(
-            left: 12,
-            right: 12,
+            left: 10,
+            right: 10,
             top: 8,
-            height: 102,
+            height: 106,
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF1E5A6),
-                borderRadius: BorderRadius.circular(4),
+                color: const Color(0xFF24262E),
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: Colors.white12),
               ),
               child: Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
-                  // Vintage Decorative Corner Arcs
+                  // Album Artwork Image sticker on left
                   Positioned(
-                    left: -20,
-                    top: -22,
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [Color(0xFFF3D96A), Color(0xFF7AA6DC)],
-                          stops: [0.35, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: -18,
-                    top: -18,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [Color(0xFFE9822C), Color(0xFFF4B934)],
-                          stops: [0.35, 1.0],
-                        ),
-                      ),
+                    left: 5,
+                    top: 5,
+                    width: 48,
+                    height: 48,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: track != null
+                          ? ArtworkWidget(
+                              id: track.albumId ?? int.tryParse(track.id),
+                              customArtPath: track.customArtPath,
+                              title: track.title,
+                              artist: track.artist,
+                              size: 48,
+                              borderRadius: 4,
+                            )
+                          : Container(
+                              color: const Color(0xFFE9822C),
+                              child: const Icon(Icons.music_note, color: Colors.white, size: 24),
+                            ),
                     ),
                   ),
 
-                  // Script Song Title
+                  // Track Title & Artist typography
                   Positioned(
-                    left: 20,
-                    right: 20,
-                    top: 4,
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Caveat',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1C2F5A),
-                      ),
+                    left: 60,
+                    right: 6,
+                    top: 6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withAlpha(180),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
-                  // Badges: "Side A", "REWIND Hi-Fi"
+                  // Retro Badges: "SIDE A", "REWIND Hi-Fi"
                   Positioned(
                     left: 6,
-                    top: 28,
+                    bottom: 6,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(200),
-                        borderRadius: BorderRadius.circular(3),
+                        color: Colors.white.withAlpha(220),
+                        borderRadius: BorderRadius.circular(2),
                       ),
                       child: const Text(
                         'SIDE A',
                         style: TextStyle(
                           fontSize: 7,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1C2F5A),
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF14151A),
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ),
                   Positioned(
                     right: 6,
-                    top: 28,
+                    bottom: 6,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(200),
-                        borderRadius: BorderRadius.circular(3),
+                        color: Colors.white.withAlpha(120),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      child: Text(
-                        artist.length > 12 ? artist.substring(0, 12) : artist,
-                        style: const TextStyle(
+                      child: const Text(
+                        'REWIND Hi-Fi 90min',
+                        style: TextStyle(
                           fontSize: 7,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1C2F5A),
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
 
-                  // Clear Inspection Pill Window
+                  // Center Clear Pill Inspection Cutout (Spools + Rotating Hubs)
                   Positioned(
-                    left: 33,
-                    top: 46,
+                    left: 45,
+                    top: 54,
                     width: 150,
-                    height: 48,
+                    height: 46,
                     child: Container(
                       decoration: BoxDecoration(
                         color: const Color(0xFF14151A),
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(23),
+                        border: Border.all(color: Colors.white12, width: 0.8),
                       ),
                       child: Stack(
                         alignment: Alignment.center,
@@ -1281,7 +1553,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                             ),
                           ),
 
-                          // Left Spool Hub (Rotates during play)
+                          // Left Spool Hub (Rotates during playback)
                           Positioned(
                             left: 9,
                             child: Transform.rotate(
@@ -1290,7 +1562,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
                             ),
                           ),
 
-                          // Right Spool Hub (Rotates during play)
+                          // Right Spool Hub (Rotates during playback)
                           Positioned(
                             left: 107,
                             child: Transform.rotate(
@@ -1307,7 +1579,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
             ),
           ),
 
-          // Bottom Head Cavity Trapezoid Foot
+          // Bottom Trapezoid Head Cavity Foot
           Positioned(
             left: 45,
             right: 45,
@@ -1457,7 +1729,6 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
             onPressed: onFastForward,
           ),
           const Spacer(),
-          // 3.5mm Headphone Jack
           Container(
             width: 16,
             height: 16,
@@ -1542,21 +1813,20 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     required VoidCallback onGoNext,
     required VoidCallback onBack,
   }) {
-    // Determine dynamic status message and primary action button label
     String statusMsg = '';
     String actionLabel = '';
 
     switch (_step) {
       case 0:
-        statusMsg = 'The lid is closed. Open it to load a tape.';
+        statusMsg = 'The lid is closed. Tap to open and reveal the cassette case.';
         actionLabel = 'Open the Walkman';
         break;
       case 1:
-        statusMsg = 'The lid is open. Drag the cassette up into the bay, or tap it.';
+        statusMsg = 'The lid is open. Insert the cassette from the case into the Walkman bay.';
         actionLabel = 'Insert the cassette';
         break;
       case 2:
-        statusMsg = 'Tape loaded. Close the lid.';
+        statusMsg = 'Tape loaded. Close the lid to play.';
         actionLabel = 'Close the lid';
         break;
       case 3:
@@ -1572,7 +1842,7 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1603,9 +1873,8 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
             ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
-          // Dynamic Status Narrative Text
           Text(
             statusMsg,
             textAlign: TextAlign.center,
@@ -1615,9 +1884,8 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
-          // Action Buttons: "Back" & Primary Pill
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1653,9 +1921,8 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
-          // Analog Volume Slider
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1688,6 +1955,59 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
         ],
       ),
     );
+  }
+}
+
+/// Custom painter for the Walkman door with a transparent acrylic glass cutout
+class LidCutoutPainter extends CustomPainter {
+  final Color frameColor;
+  final Rect windowRect;
+
+  LidCutoutPainter({
+    required this.frameColor,
+    required this.windowRect,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final outerRRect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(8),
+    );
+    final innerRRect = RRect.fromRectAndRadius(
+      windowRect,
+      const Radius.circular(6),
+    );
+
+    // Punch out the window hole using even-odd fill!
+    final path = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRRect(outerRRect)
+      ..addRRect(innerRRect);
+
+    final fillPaint = Paint()
+      ..color = frameColor
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, fillPaint);
+
+    // Exterior frame bevel
+    final outerBorder = Paint()
+      ..color = Colors.white.withAlpha(50)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawRRect(outerRRect, outerBorder);
+
+    // Window acrylic rim bevel
+    final innerBorder = Paint()
+      ..color = Colors.white.withAlpha(140)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    canvas.drawRRect(innerRRect, innerBorder);
+  }
+
+  @override
+  bool shouldRepaint(covariant LidCutoutPainter oldDelegate) {
+    return oldDelegate.frameColor != frameColor || oldDelegate.windowRect != windowRect;
   }
 }
 

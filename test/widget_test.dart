@@ -12,6 +12,7 @@ import 'package:spool/features/home/presentation/screens/home_screen.dart';
 import 'package:spool/features/library/domain/folder_model.dart';
 import 'package:spool/features/library/presentation/screens/folders_screen.dart';
 import 'package:spool/features/settings/presentation/screens/settings_screen.dart';
+import 'package:spool/features/navigation/presentation/screens/main_shell_screen.dart';
 import 'package:spool/main.dart';
 
 void main() {
@@ -339,5 +340,23 @@ void main() {
     expect(find.text('Classic TPS-L2'), findsOneWidget);
     expect(find.text('Solar Yellow'), findsOneWidget);
     expect(find.text('Stealth Black'), findsOneWidget);
+  });
+
+  testWidgets('MainShellScreen contains WALKMAN tab in navbar and switches cleanly', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: MainShellScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(find.text('WALKMAN'), findsOneWidget);
+    await tester.tap(find.text('WALKMAN'));
+    await tester.pumpAndSettle();
+    expect(find.byType(WalkmanPlayerScreen), findsOneWidget);
+    expect(find.text('SONY'), findsOneWidget);
+    expect(find.text('WALKMAN'), findsWidgets);
   });
 }

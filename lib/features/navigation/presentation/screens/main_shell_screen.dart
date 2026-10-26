@@ -10,10 +10,10 @@ import 'package:spool/core/utils/formatters.dart';
 import 'package:spool/core/widgets/artwork_widget.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
 import 'package:spool/features/audio_player/presentation/screens/now_playing_screen.dart';
+import 'package:spool/features/audio_player/presentation/screens/walkman_player_screen.dart';
 import 'package:spool/features/home/presentation/screens/home_screen.dart';
 import 'package:spool/features/library/presentation/screens/folders_screen.dart';
 import 'package:spool/features/library/presentation/screens/library_screen.dart';
-import 'package:spool/features/search/presentation/screens/search_screen.dart';
 import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
 import 'package:spool/features/settings/presentation/screens/settings_screen.dart';
 
@@ -37,8 +37,11 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     final screens = [
       HomeScreen(onNavigateToTab: (index) => setState(() => _currentIndex = index)),
       const LibraryScreen(),
+      WalkmanPlayerScreen(
+        isNavbarTab: true,
+        onNavigateHome: () => setState(() => _currentIndex = 0),
+      ),
       const FoldersScreen(),
-      const SearchScreen(),
       const SettingsScreen(),
     ];
 
@@ -94,13 +97,14 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
               label: 'LIBRARY',
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.radio_outlined),
+              activeIcon: Icon(Icons.radio),
+              label: 'WALKMAN',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.folder_outlined),
               activeIcon: Icon(Icons.folder),
               label: 'FOLDERS',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search),
-              label: 'SEARCH',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.tune_outlined),
