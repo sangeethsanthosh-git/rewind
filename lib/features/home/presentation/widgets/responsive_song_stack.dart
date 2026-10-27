@@ -444,11 +444,11 @@ class _Strip extends StatelessWidget {
         color: spineColor,
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: Colors.black.withAlpha(50), width: 0.8),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withAlpha(180),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Color(0x66000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -538,11 +538,11 @@ class _ArtFace extends StatelessWidget {
         color: const Color(0xFF282319),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFBCA987), width: 1.2),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withAlpha(220),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: Color(0x99000000),
+            blurRadius: 8,
+            offset: Offset(0, 4),
           ),
         ],
       ),

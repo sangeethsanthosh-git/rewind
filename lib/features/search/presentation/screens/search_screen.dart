@@ -103,6 +103,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         : ListView.builder(
                             physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.only(bottom: 100),
+                            itemExtent: 68.0,
                             itemCount: searchState.results.length,
                             itemBuilder: (context, index) {
                               final track = searchState.results[index];

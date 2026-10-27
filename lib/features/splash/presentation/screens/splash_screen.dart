@@ -22,10 +22,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1100),
+      duration: const Duration(milliseconds: 380),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.82, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.90, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
 
@@ -35,12 +35,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     _animController.forward();
 
-    // Navigate to MainShellScreen after splash display
-    Timer(const Duration(milliseconds: 1800), () {
+    // Fast, responsive splash transition without artificial blocking delays
+    Timer(const Duration(milliseconds: 450), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 500),
+            transitionDuration: const Duration(milliseconds: 250),
             pageBuilder: (context, anim, _) => const MainShellScreen(),
             transitionsBuilder: (context, anim, _, child) =>
                 FadeTransition(opacity: anim, child: child),

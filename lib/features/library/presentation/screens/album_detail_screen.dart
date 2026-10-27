@@ -180,8 +180,9 @@ class AlbumDetailScreen extends ConsumerWidget {
             ),
           ),
 
-          // Track List
-          SliverList(
+          // Track List (O(1) fixed-extent layout)
+          SliverFixedExtentList(
+            itemExtent: 64.0,
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final track = album.tracks[index];

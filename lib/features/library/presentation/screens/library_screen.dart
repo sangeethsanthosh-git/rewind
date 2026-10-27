@@ -140,6 +140,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 100),
+      itemExtent: 68.0,
       itemCount: songs.length,
       itemBuilder: (context, index) {
         final track = songs[index];

@@ -48,9 +48,11 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       backgroundColor: themePalette.background,
       body: Stack(
         children: [
-          // Dynamic Ambient Song Canvas or Custom Wallpaper Backdrop
+          // Dynamic Ambient Song Canvas or Custom Wallpaper Backdrop (isolated behind RepaintBoundary)
           Positioned.fill(
-            child: _buildAppBackground(settings, themePalette, currentTrack),
+            child: RepaintBoundary(
+              child: _buildAppBackground(settings, themePalette, currentTrack),
+            ),
           ),
 
           // Current Page

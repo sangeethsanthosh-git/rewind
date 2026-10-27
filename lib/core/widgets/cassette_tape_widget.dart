@@ -429,18 +429,20 @@ class _CassetteTapeWidgetState extends State<CassetteTapeWidget>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left Spool Reel (shrinks as song plays)
-          AnimatedBuilder(
-            animation: _rotationController,
-            builder: (context, child) {
-              return Transform.rotate(
-                angle: _rotationController.value * 2 * math.pi,
-                child: _CassetteSpool(
-                  size: spoolSize,
-                  tapeRadius: 20 * (1.0 - (progress * 0.5)),
-                ),
-              );
-            },
+          // Left Spool Reel (shrinks as song plays, isolated behind RepaintBoundary)
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _rotationController,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _rotationController.value * 2 * math.pi,
+                  child: _CassetteSpool(
+                    size: spoolSize,
+                    tapeRadius: 20 * (1.0 - (progress * 0.5)),
+                  ),
+                );
+              },
+            ),
           ),
 
           // Center Tinted Window with Magnetic Tape Ribbon & Tape Counter Gauge
@@ -515,18 +517,20 @@ class _CassetteTapeWidgetState extends State<CassetteTapeWidget>
             ),
           ),
 
-          // Right Spool Reel (grows as song plays)
-          AnimatedBuilder(
-            animation: _rotationController,
-            builder: (context, child) {
-              return Transform.rotate(
-                angle: _rotationController.value * 2 * math.pi,
-                child: _CassetteSpool(
-                  size: spoolSize,
-                  tapeRadius: 10 + (progress * 10),
-                ),
-              );
-            },
+          // Right Spool Reel (grows as song plays, isolated behind RepaintBoundary)
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _rotationController,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _rotationController.value * 2 * math.pi,
+                  child: _CassetteSpool(
+                    size: spoolSize,
+                    tapeRadius: 10 + (progress * 10),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

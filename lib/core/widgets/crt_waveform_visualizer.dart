@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class CrtWaveformVisualizer extends StatefulWidget {
@@ -27,7 +27,23 @@ class _CrtWaveformVisualizerState extends State<CrtWaveformVisualizer>
     _anim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat();
+    );
+    if (widget.isPlaying) {
+      _anim.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant CrtWaveformVisualizer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      if (widget.isPlaying) {
+        if (!_anim.isAnimating) _anim.repeat();
+      } else {
+        if (_anim.isAnimating) _anim.stop();
+        setState(() {});
+      }
+    }
   }
 
   @override
