@@ -2,7 +2,7 @@ name: spool
 description: "Spool - Retro Local Audio Player"
 publish_to: 'none'
 
-version: 1.0.10+11
+version: 1.0.11+12
 
 environment:
   sdk: ^3.11.5

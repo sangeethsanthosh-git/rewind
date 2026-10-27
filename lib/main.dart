@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -17,7 +17,7 @@ Future<void> main() async {
       androidNotificationChannelName: 'Rewind Audio Playback',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
-      androidNotificationIcon: 'mipmap/ic_launcher',
+      androidNotificationIcon: 'drawable/ic_stat_music',
     );
   } catch (e) {
     debugPrint('JustAudioBackground init warning: $e');

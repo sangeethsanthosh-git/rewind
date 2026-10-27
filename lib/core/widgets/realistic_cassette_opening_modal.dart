@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -86,7 +86,7 @@ const defaultSampleSongs = <Song>[
   Song(
     'Taste',
     'Sabrina Carpenter',
-    'Short nâ€™ Sweet',
+    "Short n' Sweet",
     Color(0xFF2D4FB0),
     Colors.white,
     3,
@@ -100,9 +100,9 @@ const defaultSampleSongs = <Song>[
     4,
   ),
   Song(
-    'Wildest Dreams (Taylorâ€™s Version)',
+    "Wildest Dreams (Taylor's Version)",
     'Taylor Swift',
-    '1989 (Taylorâ€™s Version)',
+    "1989 (Taylor's Version)",
     Color(0xFF7C97B4),
     Colors.white,
     5,
@@ -818,7 +818,7 @@ class CassettePainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-      ellipsis: 'â€¦',
+      ellipsis: '...',
     )..layout(maxWidth: maxW);
     c.save();
     c.translate(o.dx, o.dy);

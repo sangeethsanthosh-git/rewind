@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -18,9 +19,11 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -78,7 +81,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
               onChanged: (query) {
-                ref.read(searchNotifierProvider.notifier).search(query);
+                _debounceTimer?.cancel();
+                _debounceTimer = Timer(const Duration(milliseconds: 250), () {
+                  if (mounted) {
+                    ref.read(searchNotifierProvider.notifier).search(query);
+                  }
+                });
                 setState(() {});
               },
             ),
@@ -113,7 +121,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(
-                                  '${track.artist} â€¢ ${track.album}',
+                                  '${track.artist} \u2022 ${track.album}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTypography.bodySmall,

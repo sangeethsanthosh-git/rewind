@@ -135,8 +135,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
       );
     }
 
-    final playbackState = ref.watch(playbackNotifierProvider);
-    final currentPlayingId = playbackState.currentTrack?.id;
+    final currentPlayingId = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack?.id));
 
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
@@ -165,7 +164,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
             ),
           ),
           subtitle: Text(
-            '${track.artist} â€¢ ${track.album}',
+            '${track.artist} \u2022 ${track.album}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.bodySmall,
@@ -367,7 +366,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
 
         return VhsSpineCard(
           title: artist.name,
-          subtitle: '${artist.albumCount} albums â€¢ ${artist.trackCount} tracks',
+          subtitle: '${artist.albumCount} albums \u2022 ${artist.trackCount} tracks',
           tabColor: tabColor,
           onTap: () {
             ref.read(playbackNotifierProvider.notifier).playTrack(
@@ -567,7 +566,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
 
                     return VhsSpineCard(
                       title: folder.name,
-                      subtitle: '${folder.trackCount} songs â€¢ ${folder.path}',
+                      subtitle: '${folder.trackCount} songs \u2022 ${folder.path}',
                       tabColor: tabColor,
                       onTap: () {
                         setState(() {

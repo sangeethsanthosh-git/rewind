@@ -14,7 +14,6 @@ import 'package:spool/core/widgets/artwork_widget.dart';
 import 'package:spool/core/widgets/cassette_tape_widget.dart';
 import 'package:spool/core/widgets/crt_waveform_visualizer.dart';
 import 'package:spool/features/audio_player/domain/audio_track.dart';
-import 'package:spool/features/audio_player/domain/playback_state.dart';
 import 'package:spool/features/audio_player/presentation/providers/audio_player_provider.dart';
 import 'package:spool/features/audio_player/presentation/screens/walkman_player_screen.dart';
 import 'package:spool/features/settings/presentation/providers/settings_provider.dart';
@@ -36,16 +35,13 @@ class NowPlayingScreen extends ConsumerStatefulWidget {
 class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
   NowPlayingVisualMode _visualMode = NowPlayingVisualMode.cassette;
   bool _isTransparentCassette = false;
-  double _dragPosition = 0.0;
-  bool _isDragging = false;
   int _slideDirection = 1; // 1 for next (leftwards), -1 for prev (rightwards)
 
   @override
   Widget build(BuildContext context) {
-    final playbackState = ref.watch(playbackNotifierProvider);
+    final track = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack));
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
-    final track = playbackState.currentTrack;
 
     if (track == null) {
       return Scaffold(
@@ -74,11 +70,11 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
       );
     }
 
-    final duration = playbackState.duration;
-    final position = _isDragging
-        ? Duration(milliseconds: _dragPosition.toInt())
-        : playbackState.position;
-    final remaining = duration > position ? duration - position : Duration.zero;
+    final isPlaying = ref.watch(playbackNotifierProvider.select((s) => s.isPlaying));
+    final isShuffle = ref.watch(playbackNotifierProvider.select((s) => s.isShuffleEnabled));
+    final repeatMode = ref.watch(playbackNotifierProvider.select((s) => s.repeatMode));
+    final errorMessage = ref.watch(playbackNotifierProvider.select((s) => s.errorMessage));
+
     final hasLyrics = track.lyrics != null && track.lyrics!.trim().isNotEmpty;
     if (!hasLyrics && _visualMode == NowPlayingVisualMode.lyrics) {
       _visualMode = NowPlayingVisualMode.cassette;
@@ -182,7 +178,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
             ),
 
             // Error Banner if playback failed
-            if (playbackState.errorMessage != null)
+            if (errorMessage != null)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -197,7 +193,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        playbackState.errorMessage!,
+                        errorMessage,
                         style: AppTypography.bodySmall.copyWith(color: Colors.white, fontSize: 11),
                       ),
                     ),
@@ -239,7 +235,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     },
                     child: KeyedSubtree(
                       key: ValueKey('${track.id}_${_visualMode.name}'),
-                      child: _buildVisualContent(track, playbackState, position, duration),
+                      child: RepaintBoundary(
+                        child: _buildVisualContent(track, isPlaying),
+                      ),
                     ),
                   ),
                 ),
@@ -254,7 +252,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  AnalogVuMeter(isPlaying: playbackState.isPlaying),
+                  RepaintBoundary(
+                    child: AnalogVuMeter(isPlaying: isPlaying),
+                  ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
@@ -333,7 +333,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                   // Queue Button
                   IconButton(
                     icon: const Icon(Icons.queue_music, color: AppColors.textSecondary, size: 26),
-                    onPressed: () => _showQueueModal(context, playbackState),
+                    onPressed: () => _showQueueModal(context),
                   ),
                   // Lyrics Button (ONLY shown if song metadata has lyrics)
                   if (hasLyrics)
@@ -358,55 +358,8 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
 
             const SizedBox(height: 10),
 
-            // Seek Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 3.5,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                      activeTrackColor: settings.accentColor,
-                      thumbColor: settings.accentColor,
-                      inactiveTrackColor: AppColors.surfaceElevated,
-                    ),
-                    child: Slider(
-                      value: position.inMilliseconds
-                          .toDouble()
-                          .clamp(0.0, duration.inMilliseconds.toDouble() > 0 ? duration.inMilliseconds.toDouble() : 1.0),
-                      max: duration.inMilliseconds.toDouble() > 0 ? duration.inMilliseconds.toDouble() : 1.0,
-                      onChangeStart: (val) {
-                        setState(() {
-                          _isDragging = true;
-                          _dragPosition = val;
-                        });
-                      },
-                      onChanged: (val) {
-                        setState(() {
-                          _dragPosition = val;
-                        });
-                      },
-                      onChangeEnd: (val) {
-                        _isDragging = false;
-                        ref.read(playbackNotifierProvider.notifier).seek(Duration(milliseconds: val.toInt()));
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(Formatters.formatDuration(position), style: AppTypography.monoSmall),
-                        Text('SWIPE ART TO SWAP SONG', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted.withAlpha(120), fontSize: 9)),
-                        Text('-${Formatters.formatDuration(remaining)}', style: AppTypography.monoSmall),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Isolated Seek Bar (Only this sub-widget rebuilds on position stream ticks!)
+            _NowPlayingSeekBarWidget(accentColor: settings.accentColor),
 
             const SizedBox(height: 12),
 
@@ -420,7 +373,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                   IconButton(
                     icon: Icon(
                       Icons.shuffle,
-                      color: playbackState.isShuffleEnabled ? settings.accentColor : AppColors.textMuted,
+                      color: isShuffle ? settings.accentColor : AppColors.textMuted,
                       size: 22,
                     ),
                     onPressed: () {
@@ -456,7 +409,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                       ),
                       child: Center(
                         child: Icon(
-                          playbackState.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                           color: settings.accentColor.computeLuminance() > 0.6
                               ? Colors.black
                               : Colors.white,
@@ -476,10 +429,10 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                   // Repeat
                   IconButton(
                     icon: Icon(
-                      playbackState.repeatMode == LoopMode.one
+                      repeatMode == LoopMode.one
                           ? Icons.repeat_one_rounded
                           : Icons.repeat_rounded,
-                      color: playbackState.repeatMode != LoopMode.off ? settings.accentColor : AppColors.textMuted,
+                      color: repeatMode != LoopMode.off ? settings.accentColor : AppColors.textMuted,
                       size: 22,
                     ),
                     onPressed: () {
@@ -621,9 +574,7 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
 
   Widget _buildVisualContent(
     AudioTrack track,
-    SpoolPlaybackState playbackState,
-    Duration position,
-    Duration duration,
+    bool isPlaying,
   ) {
     final settings = ref.watch(settingsNotifierProvider);
     return LayoutBuilder(
@@ -646,14 +597,12 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
                     maxWidth: cassetteMaxW,
                     maxHeight: cassetteMaxH,
                   ),
-                  child: CassetteTapeWidget(
-                    track: track,
-                    isPlaying: playbackState.isPlaying,
-                    position: position,
-                    duration: duration,
-                    isTransparentShell: _isTransparentCassette,
-                    accentColor: settings.accentColor,
-                    labelColor: AppColors.spinePalette[track.title.hashCode.abs() % AppColors.spinePalette.length],
+                  child: RepaintBoundary(
+                    child: _CassetteVisualWrapper(
+                      track: track,
+                      accentColor: settings.accentColor,
+                      isTransparentShell: _isTransparentCassette,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -683,10 +632,12 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CrtWaveformVisualizer(
-                    isPlaying: playbackState.isPlaying,
-                    height: scopeH,
-                    beamColor: const Color(0xFF00FF88),
+                  RepaintBoundary(
+                    child: CrtWaveformVisualizer(
+                      isPlaying: isPlaying,
+                      height: scopeH,
+                      beamColor: const Color(0xFF00FF88),
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -890,8 +841,9 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
     );
   }
 
-  void _showQueueModal(BuildContext context, SpoolPlaybackState playbackState) {
+  void _showQueueModal(BuildContext context) {
     final settings = ref.read(settingsNotifierProvider);
+    final playbackState = ref.read(playbackNotifierProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.darkCharcoal,
@@ -966,6 +918,110 @@ class _NowPlayingScreenState extends ConsumerState<NowPlayingScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Dedicated Seek Bar Sub-tree that isolates frequent playback-position stream
+/// rebuilds away from the main NowPlayingScreen hierarchy.
+class _NowPlayingSeekBarWidget extends ConsumerStatefulWidget {
+  final Color accentColor;
+  const _NowPlayingSeekBarWidget({required this.accentColor});
+
+  @override
+  ConsumerState<_NowPlayingSeekBarWidget> createState() => _NowPlayingSeekBarWidgetState();
+}
+
+class _NowPlayingSeekBarWidgetState extends ConsumerState<_NowPlayingSeekBarWidget> {
+  bool _isDragging = false;
+  double _dragPosition = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final position = ref.watch(playbackNotifierProvider.select((s) => s.position));
+    final duration = ref.watch(playbackNotifierProvider.select((s) => s.duration));
+    final currentPos = _isDragging ? Duration(milliseconds: _dragPosition.toInt()) : position;
+    final remaining = duration > currentPos ? duration - currentPos : Duration.zero;
+
+    final maxMs = duration.inMilliseconds.toDouble() > 0 ? duration.inMilliseconds.toDouble() : 1.0;
+    final valMs = currentPos.inMilliseconds.toDouble().clamp(0.0, maxMs);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 3.5,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+              activeTrackColor: widget.accentColor,
+              thumbColor: widget.accentColor,
+              inactiveTrackColor: AppColors.surfaceElevated,
+            ),
+            child: Slider(
+              value: valMs,
+              max: maxMs,
+              onChangeStart: (val) {
+                setState(() {
+                  _isDragging = true;
+                  _dragPosition = val;
+                });
+              },
+              onChanged: (val) {
+                setState(() {
+                  _dragPosition = val;
+                });
+              },
+              onChangeEnd: (val) {
+                _isDragging = false;
+                ref.read(playbackNotifierProvider.notifier).seek(Duration(milliseconds: val.toInt()));
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(Formatters.formatDuration(currentPos), style: AppTypography.monoSmall),
+                Text('SWIPE ART TO SWAP SONG', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted.withAlpha(120), fontSize: 9)),
+                Text('-${Formatters.formatDuration(remaining)}', style: AppTypography.monoSmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dedicated wrapper for the animated cassette widget to isolate position & duration
+/// reel calculations from the surrounding NowPlayingScreen layout.
+class _CassetteVisualWrapper extends ConsumerWidget {
+  final AudioTrack track;
+  final Color? accentColor;
+  final bool isTransparentShell;
+
+  const _CassetteVisualWrapper({
+    required this.track,
+    this.accentColor,
+    required this.isTransparentShell,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPlaying = ref.watch(playbackNotifierProvider.select((s) => s.isPlaying));
+    final position = ref.watch(playbackNotifierProvider.select((s) => s.position));
+    final duration = ref.watch(playbackNotifierProvider.select((s) => s.duration));
+
+    return CassetteTapeWidget(
+      track: track,
+      isPlaying: isPlaying,
+      position: position,
+      duration: duration,
+      isTransparentShell: isTransparentShell,
+      accentColor: accentColor,
+      labelColor: AppColors.spinePalette[track.title.hashCode.abs() % AppColors.spinePalette.length],
     );
   }
 }

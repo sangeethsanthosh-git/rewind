@@ -25,24 +25,23 @@ class MainShellScreen extends ConsumerStatefulWidget {
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   int _currentIndex = 0;
+  late final List<Widget> _screens = [
+    HomeScreen(onNavigateToTab: (index) => setState(() => _currentIndex = index)),
+    const LibraryScreen(),
+    WalkmanPlayerScreen(
+      isNavbarTab: true,
+      onNavigateHome: () => setState(() => _currentIndex = 0),
+    ),
+    const FoldersScreen(),
+    const SettingsScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final playbackState = ref.watch(playbackNotifierProvider);
+    final currentTrack = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack));
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
-    final hasActiveTrack = playbackState.currentTrack != null;
-
-    final screens = [
-      HomeScreen(onNavigateToTab: (index) => setState(() => _currentIndex = index)),
-      const LibraryScreen(),
-      WalkmanPlayerScreen(
-        isNavbarTab: true,
-        onNavigateHome: () => setState(() => _currentIndex = 0),
-      ),
-      const FoldersScreen(),
-      const SettingsScreen(),
-    ];
+    final hasActiveTrack = currentTrack != null;
 
     return Scaffold(
       backgroundColor: themePalette.background,
@@ -50,13 +49,13 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
         children: [
           // Dynamic Ambient Song Canvas or Custom Wallpaper Backdrop
           Positioned.fill(
-            child: _buildAppBackground(settings, themePalette, playbackState.currentTrack),
+            child: _buildAppBackground(settings, themePalette, currentTrack),
           ),
 
           // Current Page
           IndexedStack(
             index: _currentIndex,
-            children: screens,
+            children: _screens,
           ),
 
           // Floating Retro Now Playing Banner (Visible ONLY on Home Page, positioned snug above navigation bar)
@@ -65,7 +64,9 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
               left: 8,
               right: 8,
               bottom: 4, // Positioned right near the bottom navigation bar
-              child: _buildHomeNowPlayingBanner(playbackState, themePalette),
+              child: RepaintBoundary(
+                child: _HomeNowPlayingBanner(themePalette: themePalette),
+              ),
             ),
         ],
       ),
@@ -202,11 +203,20 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     return Container(color: themePalette.background);
   }
 
-  Widget _buildHomeNowPlayingBanner(dynamic playbackState, ThemePalette themePalette) {
-    final track = playbackState.currentTrack!;
-    final isPlaying = playbackState.isPlaying;
-    final duration = playbackState.duration;
-    final position = playbackState.position;
+}
+
+class _HomeNowPlayingBanner extends ConsumerWidget {
+  final ThemePalette themePalette;
+  const _HomeNowPlayingBanner({required this.themePalette});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final track = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack));
+    if (track == null) return const SizedBox.shrink();
+
+    final isPlaying = ref.watch(playbackNotifierProvider.select((s) => s.isPlaying));
+    final duration = ref.watch(playbackNotifierProvider.select((s) => s.duration));
+    final position = ref.watch(playbackNotifierProvider.select((s) => s.position));
     final progress = duration.inMilliseconds > 0
         ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
@@ -348,7 +358,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
                             const SizedBox(width: 5),
                             Expanded(
                               child: Text(
-                                '${track.artist} â€¢ ${track.fileExtension.toUpperCase()}',
+                                '${track.artist} \u2022 ${track.fileExtension.toUpperCase()}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.bodySmall.copyWith(

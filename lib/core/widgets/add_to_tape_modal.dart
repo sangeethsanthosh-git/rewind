@@ -319,7 +319,7 @@ class _AddToTapeContentState extends ConsumerState<_AddToTapeContent> {
                         ),
                       ),
                       subtitle: Text(
-                        '${tape.trackCount} tracks â€¢ Tape Cassette',
+                        '${tape.trackCount} tracks \u2022 Tape Cassette',
                         style: AppTypography.monoSmall.copyWith(
                           fontSize: 10,
                           color: AppColors.textMuted,

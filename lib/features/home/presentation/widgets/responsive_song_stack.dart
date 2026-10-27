@@ -148,8 +148,9 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     final effectiveTracks = widget.tracks.isNotEmpty
         ? widget.tracks
         : _getSampleTracks();
-    final playbackState = ref.watch(playbackNotifierProvider);
-    final hasActiveTrack = playbackState.currentTrack != null;
+    final currentPlayingId = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack?.id));
+    final isPlaying = ref.watch(playbackNotifierProvider.select((s) => s.isPlaying));
+    final hasActiveTrack = currentPlayingId != null;
 
     return LayoutBuilder(
       builder: (context, box) {
@@ -164,28 +165,31 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
             // 3D Scene of floating cassette slabs
             Positioned.fill(
               child: IgnorePointer(
-                child: AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, _) {
-                    final pos = _controller.hasClients
-                        ? _controller.offset / perSong
-                        : (_lastSnappedIndex.toDouble());
+                child: RepaintBoundary(
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, _) {
+                      final pos = _controller.hasClients
+                          ? _controller.offset / perSong
+                          : (_lastSnappedIndex.toDouble());
 
-                    return ClipRect(
-                      child: Stack(
-                        children: _buildCards(
-                          pos: pos,
-                          w: w,
-                          d: d,
-                          gap: gap,
-                          eyeLevelY: eyeLevelY,
-                          boxHeight: box.maxHeight,
-                          tracks: effectiveTracks,
-                          playbackState: playbackState,
+                      return ClipRect(
+                        child: Stack(
+                          children: _buildCards(
+                            pos: pos,
+                            w: w,
+                            d: d,
+                            gap: gap,
+                            eyeLevelY: eyeLevelY,
+                            boxHeight: box.maxHeight,
+                            tracks: effectiveTracks,
+                            currentPlayingId: currentPlayingId,
+                            isPlaying: isPlaying,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -247,7 +251,8 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     required double eyeLevelY,
     required double boxHeight,
     required List<AudioTrack> tracks,
-    required dynamic playbackState,
+    required String? currentPlayingId,
+    required bool isPlaying,
   }) {
     final n = tracks.length;
     // Painter's algorithm: sort farthest from eye level first
@@ -266,8 +271,7 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
       final y = delta * gap;
       final opacity = a < 3.6 ? 1.0 : (1.0 - (a - 3.6) / 1.4).clamp(0.0, 1.0);
       final track = tracks[i];
-      final isPlaying =
-          playbackState.currentTrack?.id == track.id && playbackState.isPlaying;
+      final isPlayingTrack = currentPlayingId == track.id && isPlaying;
       final spineColor =
           AppColors.spinePalette[i % AppColors.spinePalette.length];
 
@@ -320,7 +324,7 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
           _Strip(
             track: track,
             spineColor: spineColor,
-            isPlaying: isPlaying,
+            isPlaying: isPlayingTrack,
             thickness: slabThickness,
           ),
         ),
@@ -788,7 +792,7 @@ class _Hud extends StatelessWidget {
                               ),
                             ),
                             TextSpan(
-                              text: 'â€¢ ${track.artist}',
+                              text: '\u2022 ${track.artist}',
                               style: const TextStyle(color: muted),
                             ),
                           ],

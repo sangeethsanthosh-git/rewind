@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spool/core/constants/app_colors.dart';
 import 'package:spool/core/constants/app_typography.dart';
@@ -85,7 +85,7 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
                   maxLines: 1,
                   style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text('${track.artist} â€¢ ${track.album}', style: AppTypography.bodySmall),
+                subtitle: Text('${track.artist} \u2022 ${track.album}', style: AppTypography.bodySmall),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -340,10 +340,10 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
                       height: 480,
                       child: EuropeDeluxeDisc(
                         title: selectedPlaylist.name.toUpperCase(),
-                        subtitle: '${songs.length} TRACKS â€¢ ANALOG REEL',
+                        subtitle: '${songs.length} TRACKS \u2022 ANALOG REEL',
                         description: 'Spool Custom Mixtape',
                         tracks: songs,
-                        activeTrackId: ref.watch(playbackNotifierProvider).currentTrack?.id,
+                        activeTrackId: ref.watch(playbackNotifierProvider.select((s) => s.currentTrack?.id)),
                         settings: ref.watch(settingsNotifierProvider),
                         onTrackTap: (track) {
                           ref.read(playbackNotifierProvider.notifier).playTrack(
@@ -418,7 +418,7 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
                   maxLines: 1,
                   style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text('${track.artist} â€¢ ${track.album}', style: AppTypography.bodySmall),
+                subtitle: Text('${track.artist} \u2022 ${track.album}', style: AppTypography.bodySmall),
                 onTap: () {
                   ref.read(playbackNotifierProvider.notifier).playTrack(
                     track,
@@ -626,10 +626,10 @@ class _CollectionsScreenState extends ConsumerState<CollectionsScreen> {
                         : (showDiscView
                             ? EuropeDeluxeDisc(
                                 title: playlist.name.toUpperCase(),
-                                subtitle: '${songs.length} TRACKS â€¢ MIXTAPE',
+                                subtitle: '${songs.length} TRACKS \u2022 MIXTAPE',
                                 description: 'Spool Custom Mixtape',
                                 tracks: songs,
-                                activeTrackId: ref.watch(playbackNotifierProvider).currentTrack?.id,
+                                activeTrackId: ref.watch(playbackNotifierProvider.select((s) => s.currentTrack?.id)),
                                 settings: ref.watch(settingsNotifierProvider),
                                 onTrackTap: (track) {
                                   ref.read(playbackNotifierProvider.notifier).playTrack(track, queue: songs);

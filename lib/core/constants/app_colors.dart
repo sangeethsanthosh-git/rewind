@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../features/settings/domain/app_settings.dart';
 
 class ThemePalette {
@@ -38,6 +38,8 @@ class AppColors {
   static const Color analogDark = Color(0xFF1E1D1B);
 
   // Vibrant analog accents
+  static const Color brandGreen = Color(0xFF1DF74B);
+  static const Color rewindGreen = Color(0xFF1DF74B);
   static const Color neonOrange = Color(0xFFFF5E36);
   static const Color tapeAmber = Color(0xFFFF9500);
   static const Color vinylRed = Color(0xFFE53935);
