@@ -45,4 +45,3 @@ app.*.map.json
 **/.gradle/
 android/.gradle/
 release_binaries/
-

@@ -767,18 +767,15 @@ class _WalkmanPlayerScreenState extends ConsumerState<WalkmanPlayerScreen>
     final theme = _resolveWalkmanTheme(settings);
 
     final songs = playbackState.queue.isNotEmpty ? playbackState.queue : libraryState.allSongs;
-    if (playbackState.currentTrack != null && songs.isNotEmpty) {
+    if (playbackState.currentTrack != null) {
       final curIdx = songs.indexWhere((t) => t.id == playbackState.currentTrack!.id);
-      if (curIdx >= 0) {
-        if (_step == 0) {
-          _step = 3;
-          _selectedTrackIndex = curIdx;
-          _cassetteAnimController.value = 1.0;
-          _caseLidAnimController.value = 1.0;
-          _lidAnimController.value = 0.0;
-        } else if (_step == 3 && curIdx != _selectedTrackIndex) {
-          _selectedTrackIndex = curIdx;
-        }
+      if (curIdx >= 0 && curIdx != _selectedTrackIndex) {
+        _selectedTrackIndex = curIdx;
+      }
+      if (_step == 0) {
+        _step = 3;
+        _cassetteAnimController.value = 1.0;
+        _lidAnimController.value = 0.0;
       }
     }
     final int safeIndex = songs.isNotEmpty ? _selectedTrackIndex.clamp(0, songs.length - 1) : 0;

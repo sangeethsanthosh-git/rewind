@@ -429,7 +429,7 @@ class _CassetteTapeWidgetState extends State<CassetteTapeWidget>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left Spool Reel (shrinks as song plays, isolated behind RepaintBoundary)
+          // Left Spool Reel (shrinks as song plays)
           RepaintBoundary(
             child: AnimatedBuilder(
               animation: _rotationController,
@@ -517,7 +517,7 @@ class _CassetteTapeWidgetState extends State<CassetteTapeWidget>
             ),
           ),
 
-          // Right Spool Reel (grows as song plays, isolated behind RepaintBoundary)
+          // Right Spool Reel (grows as song plays)
           RepaintBoundary(
             child: AnimatedBuilder(
               animation: _rotationController,

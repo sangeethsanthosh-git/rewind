@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:spool/core/constants/app_colors.dart';
 
 import 'package:spool/core/constants/app_typography.dart';
@@ -245,7 +245,7 @@ class CassetteDoorCompartmentState extends State<CassetteDoorCompartment>
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'AUTO REVERSE \u2022 STEREO DECK',
+                              'AUTO REVERSE â€¢ STEREO DECK',
                               style: AppTypography.monoSmall.copyWith(
                                 color: Colors.white.withAlpha(160),
                                 fontSize: 9,

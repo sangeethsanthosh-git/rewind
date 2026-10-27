@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_typography.dart';
@@ -18,11 +18,11 @@ class AlbumDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentPlayingId = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack?.id));
-    final isPlaying = ref.watch(playbackNotifierProvider.select((s) => s.isPlaying));
+    final playbackState = ref.watch(playbackNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
     final accentColor = settings.accentColor;
+    final currentPlayingId = playbackState.currentTrack?.id;
 
     return Scaffold(
       backgroundColor: themePalette.background,
@@ -180,9 +180,8 @@ class AlbumDetailScreen extends ConsumerWidget {
             ),
           ),
 
-          // Track List (O(1) fixed-extent layout)
-          SliverFixedExtentList(
-            itemExtent: 64.0,
+          // Track List
+          SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final track = album.tracks[index];
@@ -209,7 +208,7 @@ class AlbumDetailScreen extends ConsumerWidget {
                     ),
                   ),
                   subtitle: Text(
-                    '${track.fileExtension.toUpperCase()} \u2022 ${Formatters.formatDurationMs(track.durationMs)}',
+                    '${track.fileExtension.toUpperCase()} â€¢ ${Formatters.formatDurationMs(track.durationMs)}',
                     style: AppTypography.monoSmall.copyWith(
                       color: isCurrent ? AppColors.tapeAmber : AppColors.textMuted,
                       fontSize: 10,
@@ -218,7 +217,7 @@ class AlbumDetailScreen extends ConsumerWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (isCurrent && isPlaying)
+                      if (isCurrent && playbackState.isPlaying)
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: Icon(Icons.graphic_eq, color: accentColor, size: 20),

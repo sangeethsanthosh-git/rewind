@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
 
@@ -88,7 +88,7 @@ class VhsSpineCard extends StatelessWidget {
                             if (dateBadge != null) ...[
                               const SizedBox(width: 8),
                               Text(
-                                '\u2022  $dateBadge',
+                                'â€¢  $dateBadge',
                                 style: AppTypography.monoSmall.copyWith(
                                   color: const Color(0xFF777780),
                                   fontSize: 10,

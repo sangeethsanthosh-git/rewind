@@ -34,14 +34,13 @@ class _CrtWaveformVisualizerState extends State<CrtWaveformVisualizer>
   }
 
   @override
-  void didUpdateWidget(covariant CrtWaveformVisualizer oldWidget) {
+  void didUpdateWidget(CrtWaveformVisualizer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isPlaying != oldWidget.isPlaying) {
       if (widget.isPlaying) {
         if (!_anim.isAnimating) _anim.repeat();
       } else {
-        if (_anim.isAnimating) _anim.stop();
-        setState(() {});
+        _anim.stop();
       }
     }
   }

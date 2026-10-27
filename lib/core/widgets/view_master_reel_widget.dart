@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
@@ -129,7 +129,7 @@ class _ViewMasterReelWidgetState extends State<ViewMasterReelWidget> {
                 Positioned(
                   bottom: 30,
                   child: Text(
-                    'VIEW-MASTER \u2022 STEREO REEL',
+                    'VIEW-MASTER â€¢ STEREO REEL',
                     style: AppTypography.monoSmall.copyWith(
                       color: const Color(0xFF6B6458),
                       fontSize: 8,

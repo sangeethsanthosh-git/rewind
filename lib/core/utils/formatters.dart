@@ -1,4 +1,4 @@
-class Formatters {
+﻿class Formatters {
   static String formatDuration(Duration duration) {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds.remainder(60);
@@ -43,6 +43,6 @@ class Formatters {
       parts.add('${bitrate}kbps');
     }
 
-    return parts.join(' \u2022 ');
+    return parts.join(' â€¢ ');
   }
 }

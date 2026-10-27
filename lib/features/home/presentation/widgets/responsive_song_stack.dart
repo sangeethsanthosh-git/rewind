@@ -148,9 +148,8 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     final effectiveTracks = widget.tracks.isNotEmpty
         ? widget.tracks
         : _getSampleTracks();
-    final currentPlayingId = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack?.id));
-    final isPlaying = ref.watch(playbackNotifierProvider.select((s) => s.isPlaying));
-    final hasActiveTrack = currentPlayingId != null;
+    final playbackState = ref.watch(playbackNotifierProvider);
+    final hasActiveTrack = playbackState.currentTrack != null;
 
     return LayoutBuilder(
       builder: (context, box) {
@@ -165,31 +164,28 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
             // 3D Scene of floating cassette slabs
             Positioned.fill(
               child: IgnorePointer(
-                child: RepaintBoundary(
-                  child: AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, _) {
-                      final pos = _controller.hasClients
-                          ? _controller.offset / perSong
-                          : (_lastSnappedIndex.toDouble());
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, _) {
+                    final pos = _controller.hasClients
+                        ? _controller.offset / perSong
+                        : (_lastSnappedIndex.toDouble());
 
-                      return ClipRect(
-                        child: Stack(
-                          children: _buildCards(
-                            pos: pos,
-                            w: w,
-                            d: d,
-                            gap: gap,
-                            eyeLevelY: eyeLevelY,
-                            boxHeight: box.maxHeight,
-                            tracks: effectiveTracks,
-                            currentPlayingId: currentPlayingId,
-                            isPlaying: isPlaying,
-                          ),
+                    return ClipRect(
+                      child: Stack(
+                        children: _buildCards(
+                          pos: pos,
+                          w: w,
+                          d: d,
+                          gap: gap,
+                          eyeLevelY: eyeLevelY,
+                          boxHeight: box.maxHeight,
+                          tracks: effectiveTracks,
+                          playbackState: playbackState,
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -251,8 +247,7 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
     required double eyeLevelY,
     required double boxHeight,
     required List<AudioTrack> tracks,
-    required String? currentPlayingId,
-    required bool isPlaying,
+    required dynamic playbackState,
   }) {
     final n = tracks.length;
     // Painter's algorithm: sort farthest from eye level first
@@ -271,7 +266,8 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
       final y = delta * gap;
       final opacity = a < 3.6 ? 1.0 : (1.0 - (a - 3.6) / 1.4).clamp(0.0, 1.0);
       final track = tracks[i];
-      final isPlayingTrack = currentPlayingId == track.id && isPlaying;
+      final isPlaying =
+          playbackState.currentTrack?.id == track.id && playbackState.isPlaying;
       final spineColor =
           AppColors.spinePalette[i % AppColors.spinePalette.length];
 
@@ -324,7 +320,7 @@ class _ResponsiveSongStackState extends ConsumerState<ResponsiveSongStack> {
           _Strip(
             track: track,
             spineColor: spineColor,
-            isPlaying: isPlayingTrack,
+            isPlaying: isPlaying,
             thickness: slabThickness,
           ),
         ),
@@ -444,11 +440,11 @@ class _Strip extends StatelessWidget {
         color: spineColor,
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: Colors.black.withAlpha(50), width: 0.8),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x66000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: Colors.black.withAlpha(180),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -538,11 +534,11 @@ class _ArtFace extends StatelessWidget {
         color: const Color(0xFF282319),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFBCA987), width: 1.2),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x99000000),
+            color: Colors.black.withAlpha(200),
             blurRadius: 8,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -792,7 +788,7 @@ class _Hud extends StatelessWidget {
                               ),
                             ),
                             TextSpan(
-                              text: '\u2022 ${track.artist}',
+                              text: 'â€¢ ${track.artist}',
                               style: const TextStyle(color: muted),
                             ),
                           ],

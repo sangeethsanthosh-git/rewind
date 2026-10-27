@@ -28,10 +28,10 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentTrack = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack));
+    final playbackState = ref.watch(playbackNotifierProvider);
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
-    final hasActiveTrack = currentTrack != null;
+    final hasActiveTrack = playbackState.currentTrack != null;
 
     final screens = [
       HomeScreen(onNavigateToTab: (index) => setState(() => _currentIndex = index)),
@@ -48,10 +48,10 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
       backgroundColor: themePalette.background,
       body: Stack(
         children: [
-          // Dynamic Ambient Song Canvas or Custom Wallpaper Backdrop (isolated behind RepaintBoundary)
+          // Dynamic Ambient Song Canvas or Custom Wallpaper Backdrop
           Positioned.fill(
             child: RepaintBoundary(
-              child: _buildAppBackground(settings, themePalette, currentTrack),
+              child: _buildAppBackground(settings, themePalette, playbackState.currentTrack),
             ),
           ),
 
@@ -67,9 +67,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
               left: 8,
               right: 8,
               bottom: 4, // Positioned right near the bottom navigation bar
-              child: RepaintBoundary(
-                child: _HomeNowPlayingBanner(themePalette: themePalette),
-              ),
+              child: _buildHomeNowPlayingBanner(playbackState, themePalette),
             ),
         ],
       ),
@@ -206,20 +204,11 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     return Container(color: themePalette.background);
   }
 
-}
-
-class _HomeNowPlayingBanner extends ConsumerWidget {
-  final ThemePalette themePalette;
-  const _HomeNowPlayingBanner({required this.themePalette});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final track = ref.watch(playbackNotifierProvider.select((s) => s.currentTrack));
-    if (track == null) return const SizedBox.shrink();
-
-    final isPlaying = ref.watch(playbackNotifierProvider.select((s) => s.isPlaying));
-    final duration = ref.watch(playbackNotifierProvider.select((s) => s.duration));
-    final position = ref.watch(playbackNotifierProvider.select((s) => s.position));
+  Widget _buildHomeNowPlayingBanner(dynamic playbackState, ThemePalette themePalette) {
+    final track = playbackState.currentTrack!;
+    final isPlaying = playbackState.isPlaying;
+    final duration = playbackState.duration;
+    final position = playbackState.position;
     final progress = duration.inMilliseconds > 0
         ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
@@ -361,7 +350,7 @@ class _HomeNowPlayingBanner extends ConsumerWidget {
                             const SizedBox(width: 5),
                             Expanded(
                               child: Text(
-                                '${track.artist} \u2022 ${track.fileExtension.toUpperCase()}',
+                                '${track.artist} â€¢ ${track.fileExtension.toUpperCase()}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.bodySmall.copyWith(

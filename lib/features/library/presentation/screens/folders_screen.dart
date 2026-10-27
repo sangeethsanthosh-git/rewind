@@ -155,7 +155,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
 
         return VhsSpineCard(
           title: folder.name,
-          subtitle: '${folder.trackCount} tracks \u2022 ${folder.path}',
+          subtitle: '${folder.trackCount} tracks â€¢ ${folder.path}',
           tabColor: tabColor,
           dateBadge: '${folder.trackCount} TRKS',
           onTap: () => _showFolderTracks(context, ref, folder),
@@ -223,7 +223,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
                               style: AppTypography.displaySmall.copyWith(fontSize: 16),
                             ),
                             Text(
-                              '${folder.trackCount} TRACKS \u2022 ${folder.path}',
+                              '${folder.trackCount} TRACKS â€¢ ${folder.path}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppTypography.monoSmall.copyWith(
@@ -295,7 +295,7 @@ class _FoldersScreenState extends ConsumerState<FoldersScreen> {
                           ),
                         ),
                         subtitle: Text(
-                          '${track.artist} \u2022 ${track.fileExtension.toUpperCase()}',
+                          '${track.artist} â€¢ ${track.fileExtension.toUpperCase()}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTypography.bodySmall.copyWith(fontSize: 11),

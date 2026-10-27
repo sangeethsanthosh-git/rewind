@@ -10,22 +10,20 @@ import 'features/splash/presentation/screens/splash_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Parallel asynchronous engine initialization before first frame
+  // Parallel asynchronous initialization of background media engine & database
   await Future.wait([
-    // 1. Android background media service & notification controls
     JustAudioBackground.init(
       androidNotificationChannelId: 'com.antigravity.rewind.channel.audio',
       androidNotificationChannelName: 'Rewind Audio Playback',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
-      androidNotificationIcon: 'drawable/ic_stat_music',
+      androidNotificationIcon: 'mipmap/ic_launcher',
     ).catchError((e) {
       debugPrint('JustAudioBackground init warning: $e');
     }),
-    // 2. Local SQLite database connection
     AppDatabase.instance.database.catchError((e) {
       debugPrint('Database init warning: $e');
-      throw e;
+      return AppDatabase.instance.database;
     }),
   ]);
 

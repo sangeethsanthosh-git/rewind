@@ -21,12 +21,11 @@
     <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android" alt="Android" />
   </a>
   <a href="https://github.com/sangeethsanthosh-git/rewind/releases">
-    <img src="https://img.shields.io/badge/Release-v1.0.13-FF5E36?style=for-the-badge&logo=github" alt="Release v1.0.13" />
+    <img src="https://img.shields.io/badge/Release-v1.0.14-FF5E36?style=for-the-badge&logo=github" alt="Release v1.0.14" />
   </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" />
   </a>
-  <img src="https://img.shields.io/badge/Material%203-Integrated-1DF74B?style=for-the-badge&logo=materialdesign" alt="Material 3" />
   <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-00E5FF?style=for-the-badge" alt="100% Offline" />
 </p>
 
@@ -34,14 +33,14 @@
 
 ## ⚡ Download Release APKs
 
-Get the latest optimized build directly from the **[Releases](https://github.com/sangeethsanthosh-git/rewind/releases/tag/v1.0.13)**:
+Get the latest optimized build directly from the **[Releases](https://github.com/sangeethsanthosh-git/rewind/releases/tag/v1.0.14)**:
 
 | Architecture | Recommended Devices | Direct Download Link |
 | :--- | :--- | :--- |
-| **Universal (All Phones)** | Compatible with EVERY Android phone (Global universal build) | [**Download Universal APK**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.13/app-release.apk) |
-| **arm64-v8a** | Modern Android phones & tablets (64-bit) | [**Download APK (arm64-v8a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.13/app-arm64-v8a-release.apk) |
-| **armeabi-v7a** | Older Android devices (32-bit) | [**Download APK (armeabi-v7a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.13/app-armeabi-v7a-release.apk) |
-| **x86_64** | Chromebooks, emulators & PCs | [**Download APK (x86_64)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.13/app-x86_64-release.apk) |
+| **Universal (All Devices)** | Any Android phone, tablet or emulator | [**Download APK (Universal)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.14/app-release.apk) |
+| **arm64-v8a** | Modern Android phones & tablets (64-bit) | [**Download APK (arm64-v8a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.14/app-arm64-v8a-release.apk) |
+| **armeabi-v7a** | Older Android devices (32-bit) | [**Download APK (armeabi-v7a)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.14/app-armeabi-v7a-release.apk) |
+| **x86_64** | Chromebooks, emulators & PCs | [**Download APK (x86_64)**](https://github.com/sangeethsanthosh-git/rewind/releases/download/v1.0.14/app-x86_64-release.apk) |
 
 ---
 

@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import '../constants/app_colors.dart';
@@ -33,16 +33,12 @@ class ArtworkWidget extends StatelessWidget {
     if (customArtPath != null && customArtPath!.isNotEmpty) {
       final file = File(customArtPath!);
       if (file.existsSync()) {
-        final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2.0;
-        final targetPx = (size * dpr).round();
         return ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
           child: Image.file(
             file,
             width: size,
             height: size,
-            cacheWidth: targetPx > 0 ? targetPx : null,
-            cacheHeight: targetPx > 0 ? targetPx : null,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => _buildFallbackQuery(context),
           ),
