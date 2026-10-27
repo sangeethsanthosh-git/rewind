@@ -25,16 +25,6 @@ class MainShellScreen extends ConsumerStatefulWidget {
 
 class _MainShellScreenState extends ConsumerState<MainShellScreen> {
   int _currentIndex = 0;
-  late final List<Widget> _screens = [
-    HomeScreen(onNavigateToTab: (index) => setState(() => _currentIndex = index)),
-    const LibraryScreen(),
-    WalkmanPlayerScreen(
-      isNavbarTab: true,
-      onNavigateHome: () => setState(() => _currentIndex = 0),
-    ),
-    const FoldersScreen(),
-    const SettingsScreen(),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +32,17 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
     final settings = ref.watch(settingsNotifierProvider);
     final themePalette = AppColors.getThemePalette(settings.backgroundTheme);
     final hasActiveTrack = currentTrack != null;
+
+    final screens = [
+      HomeScreen(onNavigateToTab: (index) => setState(() => _currentIndex = index)),
+      const LibraryScreen(),
+      WalkmanPlayerScreen(
+        isNavbarTab: true,
+        onNavigateHome: () => setState(() => _currentIndex = 0),
+      ),
+      const FoldersScreen(),
+      const SettingsScreen(),
+    ];
 
     return Scaffold(
       backgroundColor: themePalette.background,
@@ -55,7 +56,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
           // Current Page
           IndexedStack(
             index: _currentIndex,
-            children: _screens,
+            children: screens,
           ),
 
           // Floating Retro Now Playing Banner (Visible ONLY on Home Page, positioned snug above navigation bar)

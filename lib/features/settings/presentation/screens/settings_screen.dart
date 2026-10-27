@@ -671,7 +671,7 @@ class SettingsScreen extends ConsumerWidget {
           Center(
             child: Column(
               children: [
-                Text('REWIND v1.0.11 \u2022 MATERIAL 3 EDITION', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
+                Text('REWIND v1.0.12 \u2022 WALKMAN EDITION', style: AppTypography.monoSmall.copyWith(color: AppColors.textMuted)),
                 const SizedBox(height: 4),
                 Text('Handcrafted with Flutter \u2022 100% Offline', style: AppTypography.bodySmall.copyWith(fontSize: 10)),
               ],
